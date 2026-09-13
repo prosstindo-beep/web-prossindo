@@ -1,1 +1,621 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROSS INDO - Portal Freelancer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom Scrollbar for hidden overflows */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
 
+    <!-- ==================== VIEW: LOGIN ==================== -->
+    <div id="loginView" style="display: block;">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-100">
+                <div class="text-center mb-8">
+                    <div class="bg-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <i class="fa-solid fa-briefcase text-2xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900">PROSS INDO</h1>
+                    <p class="text-sm text-slate-500 font-medium tracking-wide">FREELANCER DIREKTORI</p>
+                </div>
+
+                <div class="bg-blue-50 text-blue-700 text-sm font-medium py-2 px-4 rounded-full inline-flex items-center justify-center w-full mb-6">
+                    <i class="fa-solid fa-shield-halved mr-2"></i> Portal Terkontrol
+                </div>
+
+                <h2 class="text-2xl font-bold text-center text-slate-900 mb-2">Portal Eksklusif PROSS INDO</h2>
+                <p class="text-center text-slate-500 mb-8">Hanya untuk Klien Terdaftar</p>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">USERNAME</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-4 top-3.5 text-slate-400"></i>
+                            <input type="text" id="usernameInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all" placeholder="Masukkan username Anda" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center">
+                        Masuk ke Portal <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </form>
+
+                <div class="mt-8 text-center text-xs text-slate-400 flex items-center justify-center">
+                    <i class="fa-solid fa-lock mr-1.5"></i> Akses dijaga dan dikurasi oleh Admin
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== VIEW: MEMBER CATALOG ==================== -->
+    <div id="catalogView" style="display: none;" class="min-h-screen pb-20">
+        <!-- Header -->
+        <header class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-briefcase text-xl"></i>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">PROSS INDO</h1>
+                    <p class="text-[10px] text-blue-200">MEMBER PORTAL</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="text-blue-100 hover:text-white p-2">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xl"></i>
+            </button>
+        </header>
+
+        <!-- Hero Section -->
+        <div class="bg-blue-600 text-white px-6 pb-8 pt-4 rounded-b-3xl shadow-sm mb-6">
+            <div class="inline-flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full text-xs font-medium mb-4">
+                <i class="fa-solid fa-star text-yellow-300"></i> Talenta Terkurasi
+            </div>
+            <h2 class="text-3xl font-bold mb-3">Temukan Profesional Terbaik untuk Bisnis Anda</h2>
+            <p class="text-blue-100 text-sm leading-relaxed opacity-90">Direktori eksklusif freelancer kelas premium yang telah melalui verifikasi ketat oleh tim PROSS INDO.</p>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="px-4 -mt-10 relative z-10 mb-8">
+            <div class="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 grid gap-3">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="renderCatalog()" placeholder="Cari nama freelancer..." class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-blue-600 text-sm">
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-location-dot absolute left-4 top-3.5 text-slate-400"></i>
+                    <select id="locationFilter" onchange="renderCatalog()" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-blue-600 text-sm appearance-none">
+                        <option value="">Semua Lokasi</option>
+                        <option value="Jakarta">Jakarta</option>
+                        <option value="Bandung">Bandung</option>
+                        <option value="Surabaya">Surabaya</option>
+                        <option value="Yogyakarta">Yogyakarta</option>
+                        <option value="Medan">Medan</option>
+                        <option value="Bali">Bali</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Catalog Grid -->
+        <div class="px-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800">Talenta Tersedia</h3>
+                <span id="catalogCount" class="text-xs font-semibold text-slate-500 bg-slate-200 px-2 py-1 rounded-md">0</span>
+            </div>
+            <div id="catalogGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Cards Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== VIEW: MEMBER DETAIL ==================== -->
+    <div id="detailView" style="display: none;" class="min-h-screen bg-white">
+        <!-- Sticky Nav -->
+        <div class="sticky top-0 z-50 bg-white/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-slate-100">
+            <button onclick="showView('catalogView')" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="font-bold text-slate-800"><i class="fa-solid fa-briefcase text-blue-600 mr-2"></i> PROSS INDO</div>
+            <div class="w-10"></div> <!-- Spacer -->
+        </div>
+
+        <!-- Image Carousel -->
+        <div class="relative w-full h-72 bg-slate-900 overflow-hidden">
+            <img id="detailImage" src="" class="w-full h-full object-cover opacity-90">
+            
+            <!-- Badge -->
+            <div id="detailBadge" class="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-md"></div>
+            
+            <!-- Controls -->
+            <button onclick="prevImage()" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 backdrop-blur-sm">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button onclick="nextImage()" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 backdrop-blur-sm">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <div id="imageCounter" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">1/1</div>
+        </div>
+
+        <!-- Info -->
+        <div class="p-6">
+            <h2 id="detailName" class="text-3xl font-bold text-slate-900 mb-2"></h2>
+            <div class="flex items-center text-blue-600 font-medium mb-3 text-sm">
+                <i class="fa-solid fa-tag mr-2"></i> <span id="detailService"></span>
+            </div>
+            <div class="flex items-center text-slate-500 text-sm mb-6 pb-6 border-b border-slate-100">
+                <i class="fa-solid fa-location-dot w-5"></i> <span id="detailLocation"></span>
+            </div>
+
+            <h3 class="font-bold text-slate-900 mb-3 text-lg">Tentang Freelancer</h3>
+            <p id="detailDesc" class="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap mb-8"></p>
+        </div>
+
+        <!-- Sticky CTA -->
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
+            <button onclick="contactAdmin()" class="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-4 rounded-xl flex items-center justify-center shadow-lg transition-all">
+                <i class="fa-brands fa-whatsapp text-xl mr-2"></i> Hubungi Admin (WhatsApp)
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== VIEW: SUPER ADMIN ==================== -->
+    <div id="adminView" style="display: none;" class="min-h-screen bg-slate-100 pb-20">
+        <!-- Header -->
+        <header class="bg-slate-900 text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-md">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-xl text-blue-400"></i>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Super Admin</h1>
+                    <p class="text-[10px] text-slate-400">PROSS INDO CONTROL</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="text-slate-300 hover:text-white p-2">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xl"></i>
+            </button>
+        </header>
+
+        <div class="p-4 max-w-3xl mx-auto space-y-4">
+            
+            <!-- Stats & WA Config -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Freelancer</p>
+                        <p id="adminTotalCount" class="text-2xl font-bold text-slate-900">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-1">
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wider"><i class="fa-brands fa-whatsapp text-green-500"></i> Nomor WA Admin</p>
+                        <button onclick="editWaNumber()" class="text-blue-600 text-xs font-bold px-2 py-1 bg-blue-50 rounded-md hover:bg-blue-100"><i class="fa-solid fa-pen"></i> Edit</button>
+                    </div>
+                    <p id="adminWaDisplay" class="text-lg font-bold text-slate-800">+6281234567890</p>
+                </div>
+            </div>
+
+            <!-- Form Add/Edit -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                <h3 class="font-bold text-slate-900 mb-1 text-lg" id="formTitle">Tambah Freelancer</h3>
+                <p class="text-xs text-slate-500 mb-4">Pastikan data telah melalui verifikasi kualitas.</p>
+                
+                <form id="freelancerForm" onsubmit="saveFreelancer(event)" class="space-y-4">
+                    <input type="hidden" id="f_id">
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">NAMA</label>
+                        <input type="text" id="f_name" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-blue-600 text-sm" required>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">LOKASI</label>
+                            <input type="text" id="f_location" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-blue-600 text-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">STATUS</label>
+                            <select id="f_status" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-blue-600 text-sm">
+                                <option value="Available">Available (Hijau)</option>
+                                <option value="Busy">Busy (Merah)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">JASA / KEAHLIAN</label>
+                        <input type="text" id="f_service" placeholder="Contoh: UI/UX Designer" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-blue-600 text-sm" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">DESKRIPSI & PENGALAMAN</label>
+                        <textarea id="f_desc" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-blue-600 text-sm" required></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">FOTO PORTFOLIO (MAKS. 5)</label>
+                        <p class="text-[10px] text-slate-400 mb-2">Upload foto akan dikonversi ke format Base64 dan disimpan di browser.</p>
+                        <div class="border-2 border-dashed border-blue-300 rounded-xl p-4 text-center bg-blue-50 relative">
+                            <input type="file" id="f_images" multiple accept="image/*" onchange="previewImages(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-500 mb-2"></i>
+                            <p class="text-sm text-blue-700 font-medium">Klik atau drop foto di sini (JPG/PNG)</p>
+                        </div>
+                        <!-- Preview Images -->
+                        <div id="imagePreviewContainer" class="flex gap-2 mt-3 overflow-x-auto hide-scroll pb-2"></div>
+                    </div>
+
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" onclick="resetForm()" class="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-xl text-sm transition-all">Batal</button>
+                        <button type="submit" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md"><i class="fa-solid fa-save mr-2"></i> Simpan Data</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- List Data -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-6">
+                <h3 class="font-bold text-slate-900 mb-4 text-lg">Kelola Katalog</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold">
+                            <tr>
+                                <th class="py-3 px-4 rounded-tl-lg rounded-bl-lg">Profil</th>
+                                <th class="py-3 px-4">Nama & Jasa</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4 rounded-tr-lg rounded-br-lg text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody" class="divide-y divide-slate-100">
+                            <!-- Rows injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // --- State Management ---
+        const views = ['loginView', 'catalogView', 'detailView', 'adminView'];
+        let currentFreelancerIndex = 0; // For detail view carousel
+        let currentDetailData = null;
+        let base64ImageArray = []; // To store uploaded images temporarily
+
+        // --- Initialization ---
+        document.addEventListener("DOMContentLoaded", () => {
+            initData();
+            // Default show login explicitly via JS style to override any css bugs
+            showView('loginView');
+        });
+
+        function initData() {
+            // Default Admin WA
+            if (!localStorage.getItem('adminWa')) {
+                localStorage.setItem('adminWa', '6285111029242');
+            }
+            
+            // Seed Dummy Data if empty
+            if (!localStorage.getItem('freelancers')) {
+                const dummyData = [
+                    {
+                        id: Date.now().toString(),
+                        name: "Aditya Pranata",
+                        service: "UI/UX Designer & Product Strategist",
+                        location: "Jakarta",
+                        status: "Available",
+                        desc: "Product designer berpengalaman 7+ tahun membantu startup hingga enterprise merumuskan produk digital. Ahli dalam Design System dan Usability Testing.",
+                        images: ["https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"]
+                    },
+                    {
+                        id: (Date.now() + 1).toString(),
+                        name: "Kirana Maheswari",
+                        service: "Full-Stack Web Developer",
+                        location: "Bandung",
+                        status: "Busy",
+                        desc: "Membangun aplikasi web scalable menggunakan MERN stack dan arsitektur cloud. Terbiasa memimpin tim development dengan metodologi Agile.",
+                        images: ["https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"]
+                    }
+                ];
+                localStorage.setItem('freelancers', JSON.stringify(dummyData));
+            }
+        }
+
+        // --- Navigation ---
+        // BUG FIX APPLIED HERE: Using element.style.display to force visibility states
+        function showView(viewId) {
+            views.forEach(v => {
+                const el = document.getElementById(v);
+                if(el) {
+                    if (v === viewId) {
+                        el.style.display = 'block';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                }
+            });
+            window.scrollTo(0, 0);
+        }
+
+        // --- Authentication ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('usernameInput').value.trim().toLowerCase();
+            
+            if (username === 'admin') {
+                document.getElementById('usernameInput').value = '';
+                renderAdmin();
+                showView('adminView');
+            } else if (username === 'member') {
+                document.getElementById('usernameInput').value = '';
+                renderCatalog();
+                showView('catalogView');
+            } else {
+                alert('Username tidak valid. Gunakan "admin" atau "member".');
+            }
+        }
+
+        function logout() {
+            showView('loginView');
+        }
+
+        // --- Member Catalog View ---
+        function renderCatalog() {
+            const data = JSON.parse(localStorage.getItem('freelancers') || '[]');
+            const searchQ = document.getElementById('searchInput').value.toLowerCase();
+            const locationQ = document.getElementById('locationFilter').value;
+            
+            const grid = document.getElementById('catalogGrid');
+            grid.innerHTML = '';
+
+            const filtered = data.filter(f => {
+                const matchSearch = f.name.toLowerCase().includes(searchQ) || f.service.toLowerCase().includes(searchQ);
+                const matchLocation = locationQ === "" || f.location === locationQ;
+                return matchSearch && matchLocation;
+            });
+
+            document.getElementById('catalogCount').innerText = `${filtered.length} talenta`;
+
+            filtered.forEach(f => {
+                const thumb = (f.images && f.images.length > 0) ? f.images[0] : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+                const badgeColor = f.status === 'Available' ? 'bg-emerald-500' : 'bg-red-500';
+                
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-slate-100 overflow-hidden cursor-pointer";
+                card.onclick = () => openDetail(f.id);
+                
+                card.innerHTML = `
+                    <div class="relative h-48 w-full bg-slate-200">
+                        <img src="${thumb}" class="w-full h-full object-cover">
+                        <div class="absolute top-3 left-3 ${badgeColor} text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
+                            <div class="w-1.5 h-1.5 bg-white rounded-full mr-1.5"></div> ${f.status}
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h4 class="font-bold text-slate-900 text-lg mb-1">${f.name}</h4>
+                        <p class="text-blue-600 text-xs font-semibold mb-2"><i class="fa-solid fa-briefcase"></i> ${f.service}</p>
+                        <p class="text-slate-500 text-xs"><i class="fa-solid fa-location-dot"></i> ${f.location}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // --- Member Detail View ---
+        function openDetail(id) {
+            const data = JSON.parse(localStorage.getItem('freelancers') || '[]');
+            currentDetailData = data.find(f => f.id === id);
+            
+            if(!currentDetailData) return;
+
+            document.getElementById('detailName').innerText = currentDetailData.name;
+            document.getElementById('detailService').innerText = currentDetailData.service;
+            document.getElementById('detailLocation').innerText = currentDetailData.location;
+            document.getElementById('detailDesc').innerText = currentDetailData.desc;
+            
+            const badge = document.getElementById('detailBadge');
+            badge.innerText = currentDetailData.status;
+            badge.className = `absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${currentDetailData.status === 'Available' ? 'bg-emerald-500' : 'bg-red-500'}`;
+
+            currentFreelancerIndex = 0;
+            updateCarousel();
+            showView('detailView');
+        }
+
+        function updateCarousel() {
+            if(!currentDetailData || !currentDetailData.images || currentDetailData.images.length === 0) {
+                document.getElementById('detailImage').src = 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+                document.getElementById('imageCounter').innerText = '0/0';
+                return;
+            }
+            document.getElementById('detailImage').src = currentDetailData.images[currentFreelancerIndex];
+            document.getElementById('imageCounter').innerText = `${currentFreelancerIndex + 1}/${currentDetailData.images.length}`;
+        }
+
+        function nextImage() {
+            if(currentDetailData && currentDetailData.images.length > 0) {
+                currentFreelancerIndex = (currentFreelancerIndex + 1) % currentDetailData.images.length;
+                updateCarousel();
+            }
+        }
+
+        function prevImage() {
+            if(currentDetailData && currentDetailData.images.length > 0) {
+                currentFreelancerIndex = (currentFreelancerIndex - 1 + currentDetailData.images.length) % currentDetailData.images.length;
+                updateCarousel();
+            }
+        }
+
+        function contactAdmin() {
+            const wa = localStorage.getItem('adminWa');
+            const msg = `Halo Admin PROSS INDO, saya tertarik menggunakan jasa talent:\n\nNama: *${currentDetailData.name}*\nJasa: ${currentDetailData.service}\n\nMohon informasi ketersediaan dan rate card-nya. Terima kasih.`;
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // --- Admin View ---
+        function editWaNumber() {
+            const currentWa = localStorage.getItem('adminWa');
+            const newWa = prompt("Masukkan nomor WhatsApp Admin format (62812xxx, tanpa +):", currentWa);
+            if(newWa && newWa.trim() !== '') {
+                // simple sanitize
+                const cleanWa = newWa.replace(/[^0-9]/g, '');
+                localStorage.setItem('adminWa', cleanWa);
+                document.getElementById('adminWaDisplay').innerText = `+${cleanWa}`;
+                alert("Nomor WhatsApp berhasil diupdate!");
+            }
+        }
+
+        function renderAdmin() {
+            document.getElementById('adminWaDisplay').innerText = `+${localStorage.getItem('adminWa')}`;
+            const data = JSON.parse(localStorage.getItem('freelancers') || '[]');
+            document.getElementById('adminTotalCount').innerText = data.length;
+            
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(f => {
+                const thumb = (f.images && f.images.length > 0) ? f.images[0] : 'https://placehold.co/100x100/e2e8f0/64748b?text=NA';
+                const statusColor = f.status === 'Available' ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-red-600 bg-red-50 border-red-200';
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-3 px-4">
+                        <img src="${thumb}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                    </td>
+                    <td class="py-3 px-4">
+                        <p class="font-bold text-slate-900">${f.name}</p>
+                        <p class="text-xs text-slate-500">${f.service}</p>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 text-[10px] font-bold rounded-md border ${statusColor}">${f.status}</span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="editFreelancer('${f.id}')" class="text-blue-500 hover:text-blue-700 mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteFreelancer('${f.id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- CRUD Image & Form handling ---
+        function previewImages(event) {
+            const files = Array.from(event.target.files).slice(0, 5); // Max 5 images
+            base64ImageArray = [];
+            const container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = '';
+
+            if (files.length === 0) return;
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64String = e.target.result;
+                    base64ImageArray.push(base64String);
+                    
+                    const img = document.createElement('img');
+                    img.src = base64String;
+                    img.className = "w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-sm shrink-0";
+                    container.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function saveFreelancer(e) {
+            e.preventDefault();
+            const data = JSON.parse(localStorage.getItem('freelancers') || '[]');
+            
+            const id = document.getElementById('f_id').value;
+            const newObj = {
+                id: id ? id : Date.now().toString(),
+                name: document.getElementById('f_name').value.trim(),
+                location: document.getElementById('f_location').value.trim(),
+                status: document.getElementById('f_status').value,
+                service: document.getElementById('f_service').value.trim(),
+                desc: document.getElementById('f_desc').value.trim(),
+                images: base64ImageArray
+            };
+
+            if (id) {
+                // Edit Mode
+                const idx = data.findIndex(x => x.id === id);
+                if(idx > -1) {
+                    // If no new image uploaded, keep old images
+                    if(base64ImageArray.length === 0) {
+                        newObj.images = data[idx].images;
+                    }
+                    data[idx] = newObj;
+                    alert('Data freelancer berhasil diupdate!');
+                }
+            } else {
+                // Add Mode
+                data.unshift(newObj);
+                alert('Data freelancer berhasil ditambahkan!');
+            }
+
+            localStorage.setItem('freelancers', JSON.stringify(data));
+            resetForm();
+            renderAdmin();
+        }
+
+        function editFreelancer(id) {
+            const data = JSON.parse(localStorage.getItem('freelancers') || '[]');
+            const f = data.find(x => x.id === id);
+            if(!f) return;
+
+            document.getElementById('formTitle').innerText = "Edit Freelancer";
+            document.getElementById('f_id').value = f.id;
+            document.getElementById('f_name').value = f.name;
+            document.getElementById('f_location').value = f.location;
+            document.getElementById('f_status').value = f.status;
+            document.getElementById('f_service').value = f.service;
+            document.getElementById('f_desc').value = f.desc;
+            
+            base64ImageArray = []; // Reset uploaded array
+            document.getElementById('f_images').value = '';
+            
+            const container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = '';
+            // Show existing images in preview
+            if(f.images && f.images.length > 0) {
+                f.images.forEach(imgSrc => {
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.className = "w-16 h-16 object-cover rounded-lg border border-slate-200 opacity-70 shrink-0";
+                    container.appendChild(img);
+                });
+            }
+            
+            window.scrollTo(0, 0);
+        }
+
+        function deleteFreelancer(id) {
+            if(confirm('Yakin ingin menghapus freelancer ini dari katalog?')) {
+                let data = JSON.parse(localStorage.getItem('freelancers') || '[]');
+                data = data.filter(x => x.id !== id);
+                localStorage.setItem('freelancers', JSON.stringify(data));
+                renderAdmin();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('freelancerForm').reset();
+            document.getElementById('f_id').value = '';
+            document.getElementById('formTitle').innerText = "Tambah Freelancer";
+            document.getElementById('imagePreviewContainer').innerHTML = '';
+            base64ImageArray = [];
+        }
+
+    </script>
+</body>
+</html>
