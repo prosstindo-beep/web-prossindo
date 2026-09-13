@@ -224,7 +224,7 @@
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
                         <p class="text-[11px] text-slate-500">
-                            <i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> Username baru akan langsung aktif untuk login berikutnya.
+                            <i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> Setelah disimpan, sesi akan direset dan Anda akan dialihkan untuk login dengan username baru.
                         </p>
                         <button type="submit" id="btnUpdateAdminUser" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
                             <i class="fa-solid fa-check"></i>
@@ -1189,10 +1189,10 @@
                 return;
             }
 
-            // Indikator status tombol
+            // Indikator status tombol proses
             const originalBtnHtml = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan ke Database...';
 
             try {
                 // 2. Cek apakah username baru sudah digunakan di tabel admins Supabase
@@ -1211,7 +1211,7 @@
                             return;
                         }
                     } catch (checkErr) {
-                        console.warn("Cek keunikan username Supabase:", checkErr);
+                        console.warn("Pengecekan username unik di Supabase:", checkErr);
                     }
                 }
 
@@ -1227,56 +1227,84 @@
                     return;
                 }
 
-                // 3. Update data ke tabel admins di database Supabase
-                let supabaseSuccess = false;
+                // 3. Update data ke tabel admins di database Supabase secara permanen
+                let supabaseUpdated = false;
+                let targetAdminId = currentUser.id || null;
+
                 if (supabaseClient) {
+                    // Cari ID admin yang sesuai di Supabase jika belum tersimpan di sesi
+                    if (!targetAdminId) {
+                        try {
+                            const { data: foundAdmin } = await supabaseClient
+                                .from('admins')
+                                .select('id, username')
+                                .ilike('username', currentUsername)
+                                .maybeSingle();
+                            if (foundAdmin && foundAdmin.id) {
+                                targetAdminId = foundAdmin.id;
+                            }
+                        } catch (lookupErr) {
+                            console.warn("Lookup admin id di Supabase:", lookupErr);
+                        }
+                    }
+
+                    // Eksekusi query UPDATE ke tabel admins di Supabase
+                    let updateRes = null;
                     try {
-                        // Coba update berdasarkan ID jika tersimpan
-                        if (currentUser.id) {
-                            const { error: idErr } = await supabaseClient
+                        if (targetAdminId) {
+                            updateRes = await supabaseClient
                                 .from('admins')
                                 .update({ username: newUsername })
-                                .eq('id', currentUser.id);
-                            if (!idErr) {
-                                supabaseSuccess = true;
-                            }
+                                .eq('id', targetAdminId)
+                                .select();
                         }
 
-                        // Jika belum berhasil atau id tidak ada, update berdasarkan username lama
-                        if (!supabaseSuccess) {
-                            const { error: userErr } = await supabaseClient
+                        // Jika belum berhasil atau tidak ada targetAdminId, update berdasarkan username lama
+                        if (!updateRes || updateRes.error || !updateRes.data || updateRes.data.length === 0) {
+                            updateRes = await supabaseClient
                                 .from('admins')
                                 .update({ username: newUsername })
-                                .ilike('username', currentUsername);
-                            if (!userErr) {
-                                supabaseSuccess = true;
-                            }
+                                .ilike('username', currentUsername)
+                                .select();
                         }
 
-                        // Jika belum ada record admin di Supabase, buat baru
-                        if (!supabaseSuccess) {
-                            const { data: insData, error: insErr } = await supabaseClient
-                                .from('admins')
-                                .insert([{ username: newUsername, name: currentUser.name || 'Super Admin' }])
-                                .select()
-                                .single();
-                            if (!insErr) {
-                                supabaseSuccess = true;
-                                if (insData && insData.id) {
-                                    currentUser.id = insData.id;
-                                }
+                        if (updateRes && updateRes.error) {
+                            console.error("Gagal UPDATE tabel admins di Supabase:", updateRes.error);
+                            if (updateRes.error.code === '42501' || (updateRes.error.message && updateRes.error.message.includes('row-level security'))) {
+                                showToast('Gagal update database: Kebijakan RLS (Row-Level Security) membatasi UPDATE pada tabel admins. Harap aktifkan policy UPDATE di Supabase.', 'error');
+                            } else {
+                                showToast('Gagal update ke Supabase: ' + (updateRes.error.message || 'Terjadi kesalahan.'), 'error');
                             }
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnHtml;
+                            return;
                         }
-                    } catch (supErr) {
-                        console.warn("Update Supabase admins gagal, menggunakan penyimpanan lokal:", supErr);
+
+                        if (updateRes && updateRes.data && updateRes.data.length > 0) {
+                            supabaseUpdated = true;
+                            console.log("Berhasil memperbarui username di tabel admins Supabase:", updateRes.data);
+                        } else {
+                            // Status 200 namun 0 baris terupdate (indikasi pembatasan RLS di Supabase)
+                            console.warn("Query UPDATE Supabase mengembalikan 0 baris yang diperbarui.");
+                            showToast('Database Supabase tidak terupdate (0 baris). Pastikan kebijakan RLS UPDATE pada tabel admins telah diizinkan di Supabase.', 'error');
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnHtml;
+                            return;
+                        }
+                    } catch (dbErr) {
+                        console.error("Eksepsi saat query update ke Supabase:", dbErr);
+                        showToast('Terjadi galat koneksi saat memperbarui database Supabase.', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnHtml;
+                        return;
                     }
                 }
 
-                // 4. Update data di Local Storage
+                // 4. Update data di Local Storage agar cache offline tetap sinkron
                 let adminFound = false;
                 for (let i = 0; i < localAdmins.length; i++) {
                     if (
-                        (currentUser.id && String(localAdmins[i].id) === String(currentUser.id)) ||
+                        (targetAdminId && String(localAdmins[i].id) === String(targetAdminId)) ||
                         localAdmins[i].username.toLowerCase() === currentUsername.toLowerCase()
                     ) {
                         localAdmins[i].username = newUsername;
@@ -1285,27 +1313,34 @@
                     }
                 }
                 if (!adminFound) {
-                    localAdmins.push({ id: currentUser.id || 'admin_' + Date.now(), username: newUsername, name: currentUser.name || 'Super Admin' });
+                    localAdmins.push({ id: targetAdminId || '1', username: newUsername, name: currentUser.name || 'Super Admin' });
                 }
                 localStorage.setItem('local_admins', JSON.stringify(localAdmins));
 
-                // 5. Update session aktif di currentUser
-                currentUser.username = newUsername;
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                // 5. Tampilkan notifikasi sukses
+                showToast(`Username Super Admin berhasil diperbarui menjadi "${newUsername}" di Supabase!`, 'success');
 
-                // 6. Perbarui elemen UI di halaman
-                const currentAdminInput = document.getElementById('currentAdminUsername');
-                if (currentAdminInput) currentAdminInput.value = newUsername;
-                if (newUsernameInput) newUsernameInput.value = '';
+                // 6. Aksi: Bersihkan sesi dan paksa logout otomatis agar admin langsung dapat mencoba login baru
+                setTimeout(() => {
+                    // Bersihkan sesi aktif
+                    localStorage.removeItem('currentUser');
 
-                const badge = document.getElementById('adminActiveBadge');
-                if (badge) badge.innerText = `@${newUsername}`;
+                    // Alihkan ke tampilan login portal
+                    showView('loginView');
 
-                showToast(`Username admin berhasil diperbarui menjadi "${newUsername}"!`, 'success');
+                    // Isi otomatis input username dengan username baru agar siap diuji login
+                    const loginUserInput = document.getElementById('usernameInput');
+                    if (loginUserInput) {
+                        loginUserInput.value = newUsername;
+                        loginUserInput.focus();
+                    }
+
+                    showToast(`Sesi telah direset. Silakan klik 'Masuk ke Portal' untuk login dengan username baru: ${newUsername}`, 'info');
+                }, 1000);
+
             } catch (err) {
                 console.error("Gagal mengubah username admin:", err);
                 showToast('Terjadi kesalahan saat memperbarui username.', 'error');
-            } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnHtml;
             }
