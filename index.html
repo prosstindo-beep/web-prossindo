@@ -14,30 +14,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Supabase JS Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* iOS Safari Safe Area & Dynamic Viewport Height Handling */
         :root {
             --sat: env(safe-area-inset-top, 0px);
             --sar: env(safe-area-inset-right, 0px);
             --sab: env(safe-area-inset-bottom, 0px);
             --sal: env(safe-area-inset-left, 0px);
         }
-
         html {
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
             -webkit-tap-highlight-color: transparent;
         }
-
         body {
             min-height: 100vh;
             min-height: 100dvh;
             -webkit-font-smoothing: antialiased;
         }
-
-        /* Safe area utility classes for iOS Notch and Home Indicator */
         .pt-safe {
             padding-top: max(1rem, env(safe-area-inset-top, 0px));
         }
@@ -47,26 +40,20 @@
         .safe-bottom-bar {
             padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)) !important;
         }
-
-        /* Prevent auto-zooming on focus in iOS Safari */
         @media screen and (max-width: 768px) {
             input, select, textarea {
                 font-size: 16px !important;
             }
         }
-
-        /* Smooth momentum scrolling for iOS */
         .ios-scroll {
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
         }
-
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased w-full">
-
     <!-- ==================== VIEW: LOGIN ==================== -->
     <div id="loginView" style="display: block;" class="min-h-screen min-h-[100dvh] w-full">
         <div class="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 pt-safe pb-safe">
@@ -75,8 +62,6 @@
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">PROSS INDO</h1>
                     <p id="loginHeaderTitle" class="text-xs text-slate-500 font-semibold tracking-wider uppercase mt-1">Member Portal</p>
                 </div>
-
-                <!-- FORM MEMBER LOGIN (USERNAME ONLY - SATU-SATUNYA DI HALAMAN UTAMA) -->
                 <form id="memberLoginForm" onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Username Member</label>
@@ -89,7 +74,6 @@
                         <span>Masuk ke Katalog Talent</span> <i class="fa-solid fa-arrow-right"></i>
                     </button>
                     
-                    <!-- Tulisan kecil: Masuk sebagai Super Admin (Memunculkan Pop-up Modal) -->
                     <div class="text-center mt-4">
                         <button type="button" onclick="openAdminLoginModal()" class="text-xs text-slate-400 hover:text-blue-600 font-medium inline-flex items-center gap-1.5 transition-colors p-1" title="Akses Administrator Khusus">
                             <i class="fa-solid fa-shield-halved text-[11px]"></i>
@@ -144,9 +128,7 @@
                 <h3 class="font-bold text-slate-800">Talent Tersedia</h3>
                 <span id="catalogCount" class="text-xs font-semibold text-slate-500 bg-slate-200 px-2 py-1 rounded-md">0</span>
             </div>
-            <div id="catalogGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Data diisi otomatis oleh Supabase -->
-            </div>
+            <div id="catalogGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
     </div>
 
@@ -161,7 +143,7 @@
         </div>
 
         <div class="relative w-full h-72 bg-slate-900 overflow-hidden group cursor-pointer" onclick="openLightbox()" title="Klik untuk memperbesar foto">
-            <img id="detailImage" src="" class="w-full h-full object-cover opacity-90 transition-transform duration-300 group-hover:scale-105">
+            <img id="detailImage" src="" class="w-full h-full object-cover opacity-90 transition-transform duration-300 group-hover:scale-105" alt="Detail Talent">
             <div id="detailBadge" class="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-md"></div>
             <div class="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-none flex items-center gap-1.5 shadow-md">
                 <i class="fa-solid fa-expand"></i> Klik foto untuk memperbesar
@@ -205,7 +187,7 @@
                     <div class="flex items-center gap-1.5 sm:gap-2">
                         <h1 class="font-bold text-sm sm:text-lg leading-tight">Super Admin Dashboard</h1>
                         <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Supabase
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Backend Proxy
                         </span>
                     </div>
                     <p class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
@@ -222,7 +204,6 @@
         </header>
 
         <div class="w-full max-w-3xl mx-auto px-3 py-3.5 sm:px-5 sm:py-5 space-y-4">
-            
             <!-- Stats & WA Config -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div class="bg-white p-3.5 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3.5 sm:gap-4">
@@ -234,7 +215,6 @@
                         <p id="adminTotalCount" class="text-xl sm:text-2xl font-bold text-slate-900">0</p>
                     </div>
                 </div>
-
                 <div class="bg-white p-3.5 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div class="flex justify-between items-center mb-1">
                         <p class="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -256,7 +236,7 @@
                 </div>
             </div>
 
-            <!-- Pengaturan Akun Admin (Supabase Auth) -->
+            <!-- Pengaturan Akun Admin -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
                 <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                     <div class="flex items-center gap-2.5 sm:gap-3">
@@ -265,48 +245,25 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-slate-900 text-sm sm:text-base">Sesi & Akun Super Admin</h3>
-                            <p class="text-[11px] sm:text-xs text-slate-500">Kredensial terverifikasi oleh Supabase Authentication</p>
+                            <p class="text-[11px] sm:text-xs text-slate-500">Terautentikasi melalui Backend Proxy Server</p>
                         </div>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-4 text-xs">
                     <div class="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200">
-                        <span class="text-slate-400 font-bold block mb-1 uppercase text-[10px]">EMAIL AKUN AKTIF</span>
+                        <span class="text-slate-400 font-bold block mb-1 uppercase text-[10px]">EMAIL / USERNAME AKTIF</span>
                         <p id="currentAdminEmailDisplay" class="font-semibold text-slate-800 truncate text-xs">-</p>
                     </div>
                     <div class="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200">
-                        <span class="text-slate-400 font-bold block mb-1 uppercase text-[10px]">STATUS SESI SUPABASE</span>
+                        <span class="text-slate-400 font-bold block mb-1 uppercase text-[10px]">STATUS SESI SERVER</span>
                         <p class="text-emerald-600 font-bold flex items-center gap-1.5 text-xs">
                             <i class="fa-solid fa-circle-check"></i> Terautentikasi & Sesi Valid
                         </p>
                     </div>
                 </div>
-
-                <!-- Form Ganti Password Admin Supabase Auth -->
-                <form id="adminPasswordChangeForm" onsubmit="updateAdminPassword(event)" class="space-y-3 pt-2 border-t border-slate-100">
-                    <p class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <i class="fa-solid fa-key text-blue-600"></i> Ganti Password Akun Admin
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-600 mb-1">PASSWORD BARU (MIN. 6 KARAKTER)</label>
-                            <input type="password" id="newAdminPassInput" required minlength="6" placeholder="Password baru" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-600">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-600 mb-1">KONFIRMASI PASSWORD BARU</label>
-                            <input type="password" id="confirmAdminPassInput" required minlength="6" placeholder="Ulangi password baru" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-600">
-                        </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="submit" id="btnUpdateAdminPass" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1.5 active:scale-95 min-h-[38px]">
-                            <i class="fa-solid fa-check"></i> Simpan Password Baru
-                        </button>
-                    </div>
-                </form>
             </div>
 
-            <!-- Card / Form Tambah Admin Baru (Auto-Confirmed) -->
+            <!-- Card Tambah Admin Baru -->
             <div id="cardAddNewAdmin" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
                 <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                     <div class="flex items-center gap-2.5 sm:gap-3">
@@ -315,14 +272,13 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-slate-900 text-sm sm:text-base">Tambah Admin Baru</h3>
-                            <p class="text-[11px] sm:text-xs text-slate-500">Daftarkan akun administrator baru dengan status terverifikasi otomatis (*auto-confirmed*)</p>
+                            <p class="text-[11px] sm:text-xs text-slate-500">Daftarkan akun administrator baru dengan status terverifikasi otomatis (auto-confirmed)</p>
                         </div>
                     </div>
                     <span class="text-[10px] sm:text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full inline-flex items-center gap-1 shrink-0">
                         <i class="fa-solid fa-shield-halved"></i> Hak Akses Penuh
                     </span>
                 </div>
-
                 <form id="addNewAdminForm" onsubmit="handleCreateNewAdmin(event)" class="space-y-3">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                         <div>
@@ -353,7 +309,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2">
                         <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
                             <i class="fa-solid fa-circle-check text-emerald-500"></i>
@@ -365,8 +320,7 @@
                         </button>
                     </div>
                 </form>
-
-                <!-- Panel Daftar Admin Terdaftar -->
+                
                 <div class="mt-4 pt-3 border-t border-slate-100">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
@@ -377,16 +331,14 @@
                             <i class="fa-solid fa-arrows-rotate text-[10px]"></i> Refresh
                         </button>
                     </div>
-                    <div id="adminAccountsList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                        <!-- Rendered dynamically -->
-                    </div>
+                    <div id="adminAccountsList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs"></div>
                 </div>
             </div>
 
             <!-- Form Add/Edit Freelancer -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
                 <h3 class="font-bold text-slate-900 mb-1 text-base sm:text-lg" id="formTitle">Tambah Talent</h3>
-                <p class="text-xs text-slate-500 mb-4">Input data talent ke database cloud Supabase.</p>
+                <p class="text-xs text-slate-500 mb-4">Input data talent ke database melalui proxy aman.</p>
                 
                 <form id="freelancerForm" onsubmit="saveFreelancer(event)" class="space-y-3.5 sm:space-y-4">
                     <input type="hidden" id="f_id">
@@ -423,7 +375,6 @@
                             <p class="text-[11px] text-slate-400">Bisa memilih lebih dari 1 foto (JPG, PNG, WebP)</p>
                             <input type="file" id="f_file_input" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
                         </div>
-                        <!-- Preview Grid -->
                         <div id="imagePreviewContainer" class="flex flex-wrap gap-2 mt-3"></div>
                     </div>
                     <div class="flex gap-2.5 pt-2">
@@ -445,14 +396,12 @@
                                 <th class="py-2.5 px-3 sm:py-3 sm:px-4 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="adminTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm">
-                            <!-- Diisi otomatis oleh Supabase -->
-                        </tbody>
+                        <tbody id="adminTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Form & List Kelola Member (Klien) -->
+            <!-- Form & List Kelola Member -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
                 <h3 class="font-bold text-slate-900 mb-1 text-base sm:text-lg">Kelola Akun Member (Klien)</h3>
                 <p class="text-xs text-slate-500 mb-4">Tambahkan hak akses bagi klien untuk melihat katalog.</p>
@@ -472,7 +421,6 @@
                         <i class="fa-solid fa-user-plus mr-1.5"></i> Tambahkan Akun Member Baru
                     </button>
                 </form>
-
                 <div class="overflow-x-auto rounded-xl border border-slate-200 w-full max-w-full">
                     <table class="w-full min-w-[320px] text-left text-sm text-slate-600">
                         <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold border-b border-slate-200">
@@ -482,14 +430,12 @@
                                 <th class="py-2.5 px-3 sm:py-3 sm:px-4 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="adminMemberTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm">
-                            <!-- Diisi otomatis oleh Supabase -->
-                        </tbody>
+                        <tbody id="adminMemberTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Bagian Tabel: Riwayat Member Klik Hubungi WA Admin (Live Supabase) -->
+            <!-- Tabel Riwayat Member Klik Hubungi WA Admin -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3.5 pb-3 border-b border-slate-100">
                     <div>
@@ -497,10 +443,10 @@
                             <i class="fa-brands fa-whatsapp text-emerald-500"></i>
                             <span>Riwayat Klik Hubungi WA Admin</span>
                         </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Tersinkronisasi langsung secara live dari tabel database <code class="bg-slate-100 px-1.5 py-0.5 rounded text-blue-600 font-mono text-[11px]">wa_leads</code> Supabase.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Tersinkronisasi melalui proxy backend aman.</p>
                     </div>
                     <div class="flex items-center gap-2 self-start sm:self-auto">
-                        <button type="button" onclick="loadWaLeads()" class="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg font-semibold transition-colors shadow-sm active:scale-95" title="Muat ulang riwayat dari database Supabase">
+                        <button type="button" onclick="loadWaLeads()" class="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg font-semibold transition-colors shadow-sm active:scale-95" title="Muat ulang riwayat">
                             <i class="fa-solid fa-arrows-rotate"></i>
                             <span>Refresh</span>
                         </button>
@@ -519,19 +465,16 @@
                                 <th class="py-2.5 px-3 sm:py-3 sm:px-4 text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="waLeadsTableBody" class="divide-y divide-slate-100 text-xs">
-                            <!-- Diisi secara dinamis langsung dari tabel wa_leads Supabase -->
-                        </tbody>
+                        <tbody id="waLeadsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
                     </table>
                 </div>
             </div>
-
         </div>
     </div>
 
     <!-- ==================== MODAL: HUBUNGI WA ADMIN ==================== -->
     <div id="contactModal" style="display: none;" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 pt-safe pb-safe overflow-y-auto ios-scroll" onclick="handleContactModalBackdropClick(event)">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 relative my-auto animate-fade-in" onclick="event.stopPropagation()">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 relative my-auto" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -546,13 +489,11 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-
             <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-4 text-xs text-slate-700">
                 <p class="font-semibold text-blue-900 mb-0.5">Talent yang dipilih:</p>
                 <p class="font-bold text-slate-900 text-sm" id="modalTalentName">-</p>
                 <p class="text-blue-700 text-[11px]" id="modalTalentService">-</p>
             </div>
-
             <form id="contactForm" onsubmit="submitContactForm(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">NAMA MEMBER <span class="text-red-500">*</span></label>
@@ -582,7 +523,7 @@
 
     <!-- ==================== MODAL: LOGIN SUPER ADMIN ==================== -->
     <div id="adminLoginModal" style="display: none;" class="fixed inset-0 z-[105] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 pt-safe pb-safe overflow-y-auto ios-scroll" onclick="handleAdminLoginModalBackdropClick(event)">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-7 shadow-2xl border border-slate-100 relative my-auto animate-fade-in" onclick="event.stopPropagation()">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-7 shadow-2xl border border-slate-100 relative my-auto" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-slate-900 text-blue-400 flex items-center justify-center text-lg shrink-0 shadow-sm">
@@ -597,7 +538,6 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-
             <form id="adminSignInForm" onsubmit="handleAdminAuthLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email / Username</label>
@@ -606,7 +546,6 @@
                         <input type="text" id="adminAuthEmail" required autocomplete="username" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm text-slate-800" placeholder="Email atau username">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
                     <div class="relative">
@@ -617,14 +556,6 @@
                         </button>
                     </div>
                 </div>
-
-                <div class="flex items-center justify-between text-xs text-slate-500 pt-0.5">
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="rememberAdminSession" checked class="rounded text-blue-600 focus:ring-blue-500 border-slate-300 w-4 h-4">
-                        <span>Ingat sesi login</span>
-                    </label>
-                </div>
-
                 <div class="flex gap-2.5 pt-2">
                     <button type="button" onclick="closeAdminLoginModal()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs sm:text-sm transition-all active:scale-95 min-h-[44px]">
                         Batal
@@ -640,7 +571,7 @@
 
     <!-- ==================== MODAL: EDIT NOMOR WA ADMIN ==================== -->
     <div id="modalEditWaNumber" style="display: none;" class="fixed inset-0 z-[105] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 pt-safe pb-safe overflow-y-auto ios-scroll" onclick="handleEditWaBackdropClick(event)">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 relative my-auto animate-fade-in" onclick="event.stopPropagation()">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 relative my-auto" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">
@@ -655,7 +586,6 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-
             <form id="formEditWa" onsubmit="saveWaNumberModal(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">NOMOR WHATSAPP (KODE NEGARA TANPA +)</label>
@@ -664,7 +594,6 @@
                         <input type="tel" id="inputEditWaNumber" required class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-8 pr-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all" placeholder="6285111029242">
                     </div>
                 </div>
-
                 <div class="flex gap-2.5 pt-2">
                     <button type="button" onclick="closeEditWaModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs sm:text-sm transition-all active:scale-95 min-h-[44px]">
                         Batal
@@ -691,43 +620,276 @@
         <div id="lightboxCounter" class="mt-4 text-white/80 text-xs px-3 py-1 rounded-full bg-white/10 font-medium">1/1</div>
     </div>
 
-
-
     <!-- ==================== JAVASCRIPT ==================== -->
     <script>
-        // --- SUPABASE CONFIGURATION & SINGLETON CLIENT ---
-        let supabaseUrl = 'https://gnapicvrnwyrjyqipxew.supabase.co';
-        let supabaseKey = 'sb_publishable_rVZ8cowvhojE3RuvBXQ_Xw_aftVOotX'; 
-
-        // Fungsi Singleton: Memastikan pemanggilan supabase.createClient(...) HANYA dilakukan 1 kali secara global
-        function getSupabaseClient() {
-            if (typeof window === 'undefined') return null;
-
-            // Jika sudah diinisialisasi sebelumnya di window.supabaseClient, kembalikan instance yang sama
-            if (window.supabaseClient) {
-                return window.supabaseClient;
-            }
-
-            // Inisialisasi HANYA 1 kali untuk seluruh aplikasi
-            if (window.supabase && typeof window.supabase.createClient === 'function') {
-                window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey, {
-                    auth: {
-                        persistSession: true,
-                        autoRefreshToken: true,
-                        detectSessionInUrl: true
-                    }
-                });
-            } else {
-                window.supabaseClient = null;
-            }
-
-            return window.supabaseClient;
+        // --- SECURITY & DATABASE PROXY ARCHITECTURE ---
+        // Seluruh kunci/kredensial Supabase terisolasi 100% di server.js (Backend Proxy).
+        // Halaman client sama sekali TIDAK menyimpan Supabase URL maupun API Keys.
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
 
-        // Simpan referensi global untuk seluruh fungsi di aplikasi
+        function getAuthHeaders() {
+            const token = currentAdminSession?.access_token || currentAdminSession?.token;
+            if (token) {
+                return { 'Authorization': `Bearer ${token}` };
+            }
+            try {
+                const stored = JSON.parse(localStorage.getItem('supabase_admin_session') || '{}');
+                const t = stored?.access_token || stored?.token;
+                if (t) return { 'Authorization': `Bearer ${t}` };
+            } catch (e) {}
+            return {};
+        }
+
+        // Backend Database Proxy Client (/api/db/data)
+        const dbProxy = {
+            async select(table, options = {}) {
+                const params = new URLSearchParams({ table });
+                if (options.select) params.set('select', options.select);
+                if (options.order) params.set('order', options.order);
+                if (options.ascending !== undefined) params.set('ascending', String(options.ascending));
+                if (options.limit) params.set('limit', String(options.limit));
+                if (options.single) params.set('single', 'true');
+                if (options.maybeSingle) params.set('maybeSingle', 'true');
+                if (options.filterField && options.filterValue !== undefined) {
+                    params.set('filterField', options.filterField);
+                    params.set('filterValue', options.filterValue);
+                    if (options.ilike) params.set('ilike', 'true');
+                }
+                try {
+                    const res = await fetch(`/api/db/data?${params.toString()}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            ...getAuthHeaders()
+                        }
+                    });
+                    const json = await res.json();
+                    return json;
+                } catch (err) {
+                    console.warn(`Error saat fetch proxy GET ${table}:`, err);
+                    return { data: null, error: { message: err.message || 'Gagal terhubung ke proxy server' } };
+                }
+            },
+            async insert(table, records) {
+                try {
+                    const res = await fetch('/api/db/data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            ...getAuthHeaders()
+                        },
+                        body: JSON.stringify({ table, data: records })
+                    });
+                    const json = await res.json();
+                    return json;
+                } catch (err) {
+                    console.warn(`Error saat fetch proxy POST ${table}:`, err);
+                    return { data: null, error: { message: err.message || 'Gagal terhubung ke proxy server' } };
+                }
+            },
+            async update(table, data, match, { upsert = false, ilike = false } = {}) {
+                try {
+                    const res = await fetch('/api/db/data', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            ...getAuthHeaders()
+                        },
+                        body: JSON.stringify({ table, data, match, upsert, ilike })
+                    });
+                    const json = await res.json();
+                    return json;
+                } catch (err) {
+                    console.warn(`Error saat fetch proxy PUT ${table}:`, err);
+                    return { data: null, error: { message: err.message || 'Gagal terhubung ke proxy server' } };
+                }
+            },
+            async delete(table, match) {
+                try {
+                    const res = await fetch('/api/db/data', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            ...getAuthHeaders()
+                        },
+                        body: JSON.stringify({ table, match })
+                    });
+                    const json = await res.json();
+                    return json;
+                } catch (err) {
+                    console.warn(`Error saat fetch proxy DELETE ${table}:`, err);
+                    return { success: false, error: { message: err.message || 'Gagal terhubung ke proxy server' } };
+                }
+            }
+        };
+
+        // Query Builder yang menjembatani supabaseClient.from(...) ke dbProxy
+        function createQueryBuilder(table) {
+            let selectFields = '*';
+            let orderCol = null;
+            let orderAsc = false;
+            let limitNum = null;
+            let isSingle = false;
+            let isMaybeSingle = false;
+            let filterField = null;
+            let filterValue = undefined;
+            let isIlike = false;
+            let action = 'select';
+            let payload = null;
+            let matchObj = {};
+
+            const builder = {
+                select(fields = '*') {
+                    selectFields = fields;
+                    return builder;
+                },
+                order(col, { ascending = false } = {}) {
+                    orderCol = col;
+                    orderAsc = ascending;
+                    return builder;
+                },
+                limit(n) {
+                    limitNum = n;
+                    return builder;
+                },
+                eq(col, val) {
+                    filterField = col;
+                    filterValue = val;
+                    matchObj[col] = val;
+                    return builder;
+                },
+                ilike(col, val) {
+                    filterField = col;
+                    filterValue = val;
+                    isIlike = true;
+                    matchObj[col] = val;
+                    return builder;
+                },
+                single() {
+                    isSingle = true;
+                    return builder;
+                },
+                maybeSingle() {
+                    isMaybeSingle = true;
+                    return builder;
+                },
+                insert(data) {
+                    action = 'insert';
+                    payload = data;
+                    return builder;
+                },
+                update(data) {
+                    action = 'update';
+                    payload = data;
+                    return builder;
+                },
+                delete() {
+                    action = 'delete';
+                    return builder;
+                },
+                async then(onfulfilled, onrejected) {
+                    try {
+                        let result;
+                        if (action === 'select') {
+                            result = await dbProxy.select(table, {
+                                select: selectFields,
+                                order: orderCol,
+                                ascending: orderAsc,
+                                limit: limitNum,
+                                single: isSingle,
+                                maybeSingle: isMaybeSingle,
+                                filterField,
+                                filterValue,
+                                ilike: isIlike
+                            });
+                        } else if (action === 'insert') {
+                            result = await dbProxy.insert(table, payload);
+                        } else if (action === 'update') {
+                            result = await dbProxy.update(table, payload, matchObj, { ilike: isIlike });
+                        } else if (action === 'delete') {
+                            result = await dbProxy.delete(table, matchObj);
+                        }
+                        return onfulfilled ? onfulfilled(result) : result;
+                    } catch (err) {
+                        if (onrejected) return onrejected(err);
+                        throw err;
+                    }
+                }
+            };
+            return builder;
+        }
+
+        // Singleton Client Wrapper
+        function getSupabaseClient() {
+            if (typeof window !== 'undefined' && window.supabaseClientInstance) {
+                return window.supabaseClientInstance;
+            }
+            const client = {
+                from: (table) => createQueryBuilder(table),
+                auth: {
+                    async getSession() {
+                        const token = currentAdminSession?.access_token || currentAdminSession?.token;
+                        if (!token) {
+                            try {
+                                const stored = JSON.parse(localStorage.getItem('supabase_admin_session') || 'null');
+                                if (stored && stored.user) return { data: { session: stored }, error: null };
+                            } catch(e) {}
+                            return { data: { session: null }, error: null };
+                        }
+                        return { data: { session: currentAdminSession }, error: null };
+                    },
+                    async signInWithPassword({ email, password }) {
+                        const res = await fetch('/api/admin/verify-credentials', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ emailOrUsername: email, password })
+                        });
+                        const data = await res.json();
+                        if (!res.ok || !data.valid) {
+                            return { data: null, error: { message: data.message || 'Login gagal' } };
+                        }
+                        const session = {
+                            access_token: data.token,
+                            token: data.token,
+                            user: data.admin,
+                            expires_at: Math.floor(Date.now() / 1000) + 86400
+                        };
+                        return { data: { session, user: data.admin }, error: null };
+                    },
+                    async signOut() {
+                        return { error: null };
+                    },
+                    onAuthStateChange(cb) {
+                        return { data: { subscription: { unsubscribe: () => {} } } };
+                    }
+                },
+                channel() {
+                    return {
+                        on() { return this; },
+                        subscribe() { return this; }
+                    };
+                }
+            };
+            if (typeof window !== 'undefined') {
+                window.supabaseClientInstance = client;
+                window.supabaseClient = client;
+            }
+            return client;
+        }
+
         let supabaseClient = getSupabaseClient();
 
-        // Default mock datasets used when cloud database tables are uninitialized or offline
         const defaultAdmins = [
             { id: '1', username: 'admin', name: 'Super Admin' },
             { id: '2', username: 'superadmin', name: 'Super Admin' },
@@ -741,9 +903,7 @@
         ];
 
         function ensureLocalData() {
-            // Hapus cache data dummy statis lokal agar katalog talent murni membaca Supabase
             localStorage.removeItem('local_freelancers');
-
             if (!localStorage.getItem('local_admins')) {
                 localStorage.setItem('local_admins', JSON.stringify(defaultAdmins));
             }
@@ -758,17 +918,6 @@
             }
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        // Lightweight non-blocking toast notification helper
         function showToast(message, type = 'info') {
             let container = document.getElementById('toast-container');
             if (!container) {
@@ -782,13 +931,9 @@
             toast.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all duration-300 transform translate-y-[-10px] opacity-0 pointer-events-auto flex items-center justify-between`;
             toast.innerHTML = `<span>${message}</span><button class="ml-3 text-white/70 hover:text-white font-bold">&times;</button>`;
             const closeBtn = toast.querySelector('button');
-            if (closeBtn) {
-                closeBtn.onclick = () => toast.remove();
-            }
+            if (closeBtn) closeBtn.onclick = () => toast.remove();
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('translate-y-[-10px]', 'opacity-0');
-            }, 10);
+            setTimeout(() => { toast.classList.remove('translate-y-[-10px]', 'opacity-0'); }, 10);
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-[-10px]');
                 setTimeout(() => toast.remove(), 300);
@@ -800,27 +945,16 @@
         let currentDetailData = null;
         let selectedImages = [];
         let currentAdminSession = null;
-        let isAuthChecking = false;
 
-        // --- DYNAMIC BODY SCROLL LOCK MANAGEMENT ---
-        // Memastikan scroll layar <body> HANYA dikunci saat modal pop-up sedang aktif,
-        // dan otomatis dilepas (dihapus dari <body>) saat modal ditutup.
         let activeModalsCount = 0;
-
         function lockBodyScroll() {
             activeModalsCount++;
-            if (activeModalsCount === 1) {
-                document.body.style.overflow = 'hidden';
-            }
+            if (activeModalsCount === 1) document.body.style.overflow = 'hidden';
         }
-
         function unlockBodyScroll() {
             activeModalsCount = Math.max(0, activeModalsCount - 1);
-            if (activeModalsCount === 0) {
-                document.body.style.overflow = '';
-            }
+            if (activeModalsCount === 0) document.body.style.overflow = '';
         }
-
         function resetBodyScroll() {
             activeModalsCount = 0;
             document.body.style.overflow = '';
@@ -830,8 +964,6 @@
             ensureLocalData();
             await initData();
             renderImagePreviews();
-
-            // Keyboard navigation for lightbox & modals
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     closeLightbox();
@@ -842,7 +974,6 @@
             });
         });
 
-        // --- MODAL: LOGIN SUPER ADMIN POP-UP ---
         function openAdminLoginModal() {
             const modal = document.getElementById('adminLoginModal');
             if (modal) {
@@ -869,28 +1000,6 @@
             }
         }
 
-        function switchLoginTab(tab) {
-            if (tab === 'admin') {
-                openAdminLoginModal();
-            } else {
-                closeAdminLoginModal();
-            }
-        }
-
-        function toggleAdminSignUpForm(show) {
-            const container = document.getElementById('adminSignUpContainer');
-            const toggleBtn = document.getElementById('btnToggleSignUp');
-            if (!container) return;
-            const isHidden = container.style.display === 'none';
-            const targetState = typeof show === 'boolean' ? show : isHidden;
-            container.style.display = targetState ? 'block' : 'none';
-            if (toggleBtn) {
-                toggleBtn.innerHTML = targetState 
-                    ? '<i class="fa-solid fa-xmark mr-1.5"></i> <span>Tutup formulir registrasi</span>' 
-                    : '<i class="fa-solid fa-user-plus mr-1.5"></i> <span>Belum buat akun di Supabase Auth? Registrasi Admin</span>';
-            }
-        }
-
         function togglePasswordVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
             if (!input) return;
@@ -912,7 +1021,7 @@
 
         function updateAdminSessionUI(session) {
             if (!session || !session.user) return;
-            const email = session.user.email || 'admin@prossindo.com';
+            const email = session.user.email || session.user.username || 'admin@prossindo.com';
             const badge = document.getElementById('adminActiveBadge');
             if (badge) badge.innerText = email;
             const emailDisp = document.getElementById('currentAdminEmailDisplay');
@@ -924,7 +1033,6 @@
             let cleanWa = String(rawWa).replace(/\D/g, '');
             if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
             if (!cleanWa) cleanWa = '6285111029242';
-
             const tName = (f && f.name) ? f.name : 'Talent';
             const srv = (f && f.service) ? f.service : '-';
             const loc = (f && f.location) ? f.location : '-';
@@ -933,8 +1041,7 @@
                 const u = JSON.parse(localStorage.getItem('currentUser') || '{}');
                 currentMemberName = u.name || u.username || 'Member';
             } catch(e) {}
-
-            const text = `Halo Admin PROSS INDO,\nSaya (${currentMemberName}) tertarik untuk berkonsultasi mengenai talent:\n• Nama: ${tName}\n• Layanan: ${srv}\n• Lokasi: ${loc}\nMohon informasi ketersediaan jadwalnya. Terima kasih!`;
+            const text = `Halo Admin PROSS INDO,\nSaya (${currentMemberName}) tertarik untuk berkonsultasi mengenai talent:\n  Nama: ${tName}\n  Layanan: ${srv}\n  Lokasi: ${loc}\nMohon informasi ketersediaan jadwalnya. Terima kasih!`;
             return `https://wa.me/${cleanWa}?text=${encodeURIComponent(text)}`;
         }
 
@@ -945,35 +1052,17 @@
                 const u = JSON.parse(localStorage.getItem('currentUser') || '{}');
                 memberName = u.name || u.username || 'Member';
             } catch(e) {}
-
             const leadEntry = {
-                id: 'lead_' + Date.now(),
                 member_name: memberName,
                 talent_name: talent.name || 'Talent',
                 service: talent.service || '-',
                 reference: `Klik langsung kartu katalog (${talent.location || '-'})`,
-                status: 'pending',
-                created_at: new Date().toISOString()
+                status: 'Baru'
             };
-
             try {
-                const localLeads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
-                localLeads.unshift(leadEntry);
-                localStorage.setItem('local_wa_leads', JSON.stringify(localLeads.slice(0, 100)));
-            } catch(e) {}
-
-            if (supabaseClient) {
-                try {
-                    await supabaseClient.from('wa_leads').insert([{
-                        member_name: leadEntry.member_name,
-                        talent_name: leadEntry.talent_name,
-                        service: leadEntry.service,
-                        reference: leadEntry.reference,
-                        status: 'pending'
-                    }]);
-                } catch(sErr) {
-                    console.warn('Supabase lead record notice:', sErr);
-                }
+                await supabaseClient.from('wa_leads').insert([leadEntry]);
+            } catch(sErr) {
+                console.warn('Supabase lead record notice:', sErr);
             }
         }
 
@@ -984,80 +1073,15 @@
             
             const waDisp = document.getElementById('adminWaDisplay');
             if (waDisp) waDisp.innerText = `+${cleanWa}`;
-
             const testBtn = document.getElementById('btnTestAdminWa');
             if (testBtn) {
                 const testMsg = 'Halo Admin PROSS INDO, ini adalah uji coba pesan WhatsApp.';
                 testBtn.href = `https://wa.me/${cleanWa}?text=${encodeURIComponent(testMsg)}`;
-                testBtn.target = '_blank';
-                testBtn.rel = 'noopener noreferrer';
-            }
-
-            // Otomatis sinkronkan semua tautan https://wa.me/<nomor> di kartu-kartu talent
-            const cardLinks = document.querySelectorAll('.talent-card-wa-link');
-            cardLinks.forEach(link => {
-                try {
-                    const rawTalentData = link.getAttribute('data-talent');
-                    if (rawTalentData) {
-                        const f = JSON.parse(rawTalentData);
-                        link.href = getTalentWaUrl(f);
-                    } else {
-                        const oldHref = link.getAttribute('href') || '';
-                        const parts = oldHref.split('?text=');
-                        const textPart = parts[1] ? `?text=${parts[1]}` : '';
-                        link.href = `https://wa.me/${cleanWa}${textPart}`;
-                    }
-                } catch(e) {
-                    const oldHref = link.getAttribute('href') || '';
-                    const parts = oldHref.split('?text=');
-                    const textPart = parts[1] ? `?text=${parts[1]}` : '';
-                    link.href = `https://wa.me/${cleanWa}${textPart}`;
-                }
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-            });
-
-            // Sinkronkan juga tautan langsung di modal kontak detail
-            const linkDirect = document.getElementById('linkDirectWa');
-            if (linkDirect) {
-                const tName = (currentDetailData && currentDetailData.name) ? currentDetailData.name : 'Talent';
-                const directMsg = `Halo Admin PROSS INDO, saya tertarik berkonsultasi mengenai talent: ${tName}.`;
-                linkDirect.href = `https://wa.me/${cleanWa}?text=${encodeURIComponent(directMsg)}`;
-                linkDirect.target = '_blank';
-                linkDirect.rel = 'noopener noreferrer';
             }
         }
 
         async function initData() {
-            try {
-                const cfgRes = await fetch('/api/config');
-                if (cfgRes.ok) {
-                    const cfg = await cfgRes.json();
-                    if (cfg.supabaseUrl && cfg.supabaseKey && (cfg.supabaseUrl !== supabaseUrl || cfg.supabaseKey !== supabaseKey)) {
-                        supabaseUrl = cfg.supabaseUrl;
-                        supabaseKey = cfg.supabaseKey;
-                    }
-                }
-            } catch (cfgErr) {
-                console.warn("Menggunakan konfigurasi default:", cfgErr);
-            }
-
-            // Gunakan singleton global instance Supabase (HANYA dibuat 1 kali)
             supabaseClient = getSupabaseClient();
-
-            try {
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient.from('admin_config').select('wa_number').limit(1).single();
-                    if (data && !error && data.wa_number) {
-                        localStorage.setItem('adminWa', data.wa_number);
-                        updateAdminWaDisplay(data.wa_number);
-                    }
-                }
-            } catch (err) {
-                console.warn("Memuat config dari Supabase:", err);
-            }
-
-            // Sync dari backend endpoint /api/config/wa jika tersedia
             try {
                 const waRes = await fetch('/api/config/wa');
                 if (waRes.ok) {
@@ -1068,105 +1092,30 @@
                     }
                 }
             } catch (bErr) {}
-
             if (!localStorage.getItem('adminWa')) {
                 localStorage.setItem('adminWa', '6285111029242');
             }
             updateAdminWaDisplay(localStorage.getItem('adminWa'));
-
-            // Periksa sesi autentikasi Supabase Auth yang tersimpan
             await checkAuthSession();
         }
 
         async function checkAuthSession() {
-            if (!supabaseClient) {
-                showView('loginView');
-                return;
-            }
-
-            isAuthChecking = true;
             try {
-                // 1. Cek sesi Supabase Auth resmi
-                const { data: { session }, error } = await supabaseClient.auth.getSession();
-                if (session && session.user) {
-                    currentAdminSession = session;
-                    updateAdminSessionUI(session);
-
-                    try {
-                        fetch('/api/auth/verify', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${session.access_token}`
-                            }
-                        }).catch(() => {});
-                    } catch(e) {}
-
-                    const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                    if (savedUser && savedUser.role === 'admin') {
-                        renderAdmin();
-                        loadWaLeads();
-                        setupWaLeadsRealtime();
-                        showView('adminView');
-                        isAuthChecking = false;
-                        return;
-                    }
-                }
-
-                // 2. Cek sesi admin terverifikasi yang tersimpan di localStorage
                 const storedAdminSession = localStorage.getItem('supabase_admin_session');
                 if (storedAdminSession) {
-                    try {
-                        const parsed = JSON.parse(storedAdminSession);
-                        if (parsed && parsed.user && (!parsed.expires_at || parsed.expires_at > Math.floor(Date.now() / 1000))) {
-                            currentAdminSession = parsed;
-                            updateAdminSessionUI(parsed);
-
-                            try {
-                                fetch('/api/auth/verify', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${parsed.access_token}`
-                                    }
-                                }).catch(() => {});
-                            } catch(e) {}
-
-                            const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                            if (savedUser && savedUser.role === 'admin') {
-                                renderAdmin();
-                                loadWaLeads();
-                                setupWaLeadsRealtime();
-                                showView('adminView');
-                                isAuthChecking = false;
-                                return;
-                            }
-                        }
-                    } catch (pErr) {}
-                }
-
-                currentAdminSession = null;
-
-                // Supabase Auth change listener
-                supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                    console.log("Supabase Auth event:", event, session ? session.user?.email : null);
-                    if (session && session.user) {
-                        currentAdminSession = session;
-                        updateAdminSessionUI(session);
-                    } else if (event === 'SIGNED_OUT') {
-                        currentAdminSession = null;
-                        localStorage.removeItem('currentUser');
-                        localStorage.removeItem('supabase_admin_session');
-                        const adminViewEl = document.getElementById('adminView');
-                        if (adminViewEl && adminViewEl.style.display !== 'none') {
-                            showView('loginView');
-                            switchLoginTab('admin');
-                            showToast('Sesi autentikasi telah berakhir. Silakan login kembali.', 'info');
+                    const parsed = JSON.parse(storedAdminSession);
+                    if (parsed && parsed.user && (!parsed.expires_at || parsed.expires_at > Math.floor(Date.now() / 1000))) {
+                        currentAdminSession = parsed;
+                        updateAdminSessionUI(parsed);
+                        const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                        if (savedUser && savedUser.role === 'admin') {
+                            renderAdmin();
+                            loadWaLeads();
+                            showView('adminView');
+                            return;
                         }
                     }
-                });
-
-                // Cek apakah member sedang login
+                }
                 const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
                 if (savedUser && savedUser.role === 'member') {
                     renderCatalog();
@@ -1175,48 +1124,32 @@
                     showView('loginView');
                 }
             } catch(e) {
-                console.warn("Gagal mengecek sesi Supabase Auth:", e);
                 showView('loginView');
-            } finally {
-                isAuthChecking = false;
             }
         }
 
         let lastCatalogScrollPosition = 0;
-
         function showView(viewId, resetScroll = true) {
-            // Pastikan scroll lock <body> dibersihkan setiap kali berpindah view
             resetBodyScroll();
-
-            // KEAMANAN KETAT: adminView HANYA boleh ditampilkan jika ada sesi Supabase Auth aktif!
             if (viewId === 'adminView') {
                 if (!currentAdminSession || !currentAdminSession.user) {
-                    console.warn('Blokir akses tak terotorisasi ke adminView.');
-                    showToast('Akses ditolak! Panel Super Admin hanya dapat diakses dengan akun resmi Supabase Auth.', 'error');
+                    showToast('Akses ditolak! Panel Super Admin hanya dapat diakses setelah login.', 'error');
                     viewId = 'loginView';
                     openAdminLoginModal();
                 }
             }
-
             views.forEach(v => {
                 const el = document.getElementById(v);
-                if (el) {
-                    el.style.display = (v === viewId) ? 'block' : 'none';
-                }
+                if (el) el.style.display = (v === viewId) ? 'block' : 'none';
             });
-
-            if (resetScroll) {
-                window.scrollTo(0, 0);
-            }
+            if (resetScroll) window.scrollTo(0, 0);
         }
 
-        // --- AUTHENTICATION: SUPER ADMIN (SUPABASE AUTH: EMAIL & PASSWORD + ADMIN RECOGNITION) ---
         async function handleAdminAuthLogin(e) {
             e.preventDefault();
             const userInputEl = document.getElementById('adminAuthEmail');
             const passwordInput = document.getElementById('adminAuthPassword');
             const btn = document.getElementById('btnAdminLogin');
-
             const userInput = userInputEl ? userInputEl.value.trim() : '';
             const password = passwordInput ? passwordInput.value : '';
 
@@ -1225,527 +1158,115 @@
                 return;
             }
 
-            if (!supabaseClient) {
-                showToast('Koneksi Supabase belum siap. Tunggu sesaat dan coba lagi.', 'error');
-                return;
-            }
-
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> <span>Memvalidasi kredensial...</span>';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Memvalidasi...';
 
             try {
-                const cleanInput = userInput.toLowerCase();
-                const usernamePrefix = cleanInput.split('@')[0];
-
-                // Cek identitas Super Admin yang sah (Pemilik App / Akun terdaftar di Supabase: Angga, SIHA, admin)
-                let isRecognizedAdmin = 
-                    cleanInput === 'argayunanda52@gmail.com' ||
-                    cleanInput.includes('argayunanda') ||
-                    cleanInput === 'angga' ||
-                    cleanInput === 'siha' ||
-                    cleanInput === 'admin' ||
-                    cleanInput === 'superadmin' ||
-                    usernamePrefix === 'angga' ||
-                    usernamePrefix === 'argayunanda52';
-
-                let matchedAdminRow = null;
-
-                // Cek ke tabel admins Supabase jika input cocok
-                try {
-                    const { data: adminData } = await supabaseClient
-                        .from('admins')
-                        .select('*')
-                        .or(`username.ilike.${cleanInput},username.ilike.${usernamePrefix}`)
-                        .maybeSingle();
-                    if (adminData) {
-                        matchedAdminRow = adminData;
-                        isRecognizedAdmin = true;
-                    }
-                } catch (err) {
-                    console.warn('Cek tabel admins info:', err.message || err);
-                }
-
-                // Format email untuk Supabase Auth
-                let authEmail = userInput;
-                if (!authEmail.includes('@')) {
-                    authEmail = `${cleanInput}@prossindo.com`;
-                }
-
-                // Jalankan Supabase Auth signInWithPassword
                 const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: authEmail,
+                    email: userInput,
                     password: password
                 });
 
-                if (error) {
-                    console.warn("Supabase Auth signInWithPassword info:", error.message || error);
-                    const errMsg = error.message || '';
-
-                    // Cek juga ke backend endpoint verify-credentials untuk admin yang baru didaftarkan
-                    let backendVerified = false;
-                    let backendAdminData = null;
-                    try {
-                        const credResp = await fetch('/api/admin/verify-credentials', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ emailOrUsername: userInput, password: password })
-                        });
-                        if (credResp.ok) {
-                            const credData = await credResp.json();
-                            if (credData && credData.valid && credData.admin) {
-                                backendVerified = true;
-                                backendAdminData = credData;
-                            }
-                        }
-                    } catch (bErr) {
-                        console.warn('Backend credential verification notice:', bErr);
-                    }
-
-                    if (backendVerified && backendAdminData) {
-                        const adminObj = backendAdminData.admin;
-                        const adminUser = {
-                            id: adminObj.id,
-                            username: adminObj.username,
-                            email: adminObj.email,
-                            role: 'admin',
-                            user_metadata: { role: 'admin', full_name: adminObj.name || adminObj.username }
-                        };
-
-                        currentAdminSession = {
-                            user: adminUser,
-                            access_token: backendAdminData.token || ('admin-verified-session-' + Date.now()),
-                            expires_at: Math.floor(Date.now() / 1000) + 86400 * 7,
-                            role: 'admin'
-                        };
-
-                        localStorage.setItem('supabase_admin_session', JSON.stringify(currentAdminSession));
-                        localStorage.setItem('currentUser', JSON.stringify({
-                            role: 'admin',
-                            id: adminUser.id,
-                            username: adminUser.username,
-                            email: adminUser.email,
-                            name: adminUser.name || adminUser.username
-                        }));
-
-                        updateAdminSessionUI(currentAdminSession);
-                        showToast(`Login berhasil! Selamat datang, Super Admin (${adminUser.name || adminUser.username})`, 'success');
-                        closeAdminLoginModal();
-                        await renderAdmin();
-                        await loadWaLeads();
-                        setupWaLeadsRealtime();
-                        showView('adminView');
-                        return;
-                    }
-
-                    // 1. Kredensial valid tetapi butuh konfirmasi email (Email not confirmed)
-                    // ATAU 2. Kredensial dimasukkan oleh Super Admin / Pemilik yang sah (argayunanda52@gmail.com, Angga, SIHA)
-                    if (errMsg.includes('Email not confirmed') || error.code === 'email_not_confirmed' || isRecognizedAdmin) {
-                        const adminDisplayName = (cleanInput.includes('angga') || cleanInput.includes('argayunanda')) ? 'Angga' : 
-                                                 (cleanInput.includes('siha') ? 'SIHA' : (matchedAdminRow?.username || 'Super Admin'));
-                        const adminEmailVal = userInput.includes('@') ? userInput : `${cleanInput}@prossindo.com`;
-
-                        const adminUser = {
-                            id: (cleanInput.includes('angga') || cleanInput.includes('argayunanda')) ? 3 : (matchedAdminRow?.id || 1),
-                            username: adminDisplayName,
-                            email: adminEmailVal,
-                            role: 'admin',
-                            user_metadata: { role: 'admin', full_name: adminDisplayName }
-                        };
-
-                        currentAdminSession = {
-                            user: adminUser,
-                            access_token: 'admin-verified-session-' + Date.now(),
-                            expires_at: Math.floor(Date.now() / 1000) + 86400 * 7,
-                            role: 'admin'
-                        };
-
-                        localStorage.setItem('supabase_admin_session', JSON.stringify(currentAdminSession));
-                        localStorage.setItem('currentUser', JSON.stringify({
-                            role: 'admin',
-                            id: adminUser.id,
-                            username: adminUser.username,
-                            email: adminUser.email,
-                            name: adminUser.username
-                        }));
-
-                        updateAdminSessionUI(currentAdminSession);
-
-                        // Kirim ulang konfirmasi email di latar belakang jika belum terkonfirmasi
-                        if (errMsg.includes('Email not confirmed')) {
-                            try {
-                                supabaseClient.auth.resend({ type: 'signup', email: authEmail }).catch(() => {});
-                            } catch(e) {}
-                        }
-
-                        showToast(`Login berhasil! Selamat datang, Super Admin (${adminDisplayName})`, 'success');
-                        closeAdminLoginModal();
-                        await renderAdmin();
-                        await loadWaLeads();
-                        setupWaLeadsRealtime();
-                        showView('adminView');
-                        return;
-                    }
-
-                    // Jika user tidak dikenali dan bukan Super Admin
-                    showToast('Email atau password tidak cocok. Silakan periksa kembali atau hubungi Super Admin.', 'error');
+                if (error || !data || !data.session) {
+                    showToast(error ? error.message : 'Kredensial salah atau tidak cocok.', 'error');
                     return;
                 }
 
-                // Jika berhasil login standar Supabase Auth
-                if (data && data.session && data.user) {
-                    currentAdminSession = data.session;
-                    updateAdminSessionUI(data.session);
-
-                    localStorage.setItem('currentUser', JSON.stringify({
-                        role: 'admin',
-                        email: data.user.email,
-                        id: data.user.id,
-                        name: data.user.user_metadata?.full_name || data.user.email.split('@')[0] || 'Super Admin'
-                    }));
-
-                    try {
-                        await fetch('/api/auth/verify', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${data.session.access_token}`
-                            }
-                        });
-                    } catch(e) {}
-
-                    if (document.getElementById('adminSignInForm')) {
-                        document.getElementById('adminSignInForm').reset();
-                    }
-
-                    showToast(`Login berhasil! Selamat datang, Super Admin (${data.user.email})`, 'success');
-                    closeAdminLoginModal();
-                    await renderAdmin();
-                    await loadWaLeads();
-                    setupWaLeadsRealtime();
-                    showView('adminView');
-                }
-            } catch (err) {
-                console.warn("Peringatan saat login admin:", err.message || err);
-                showToast('Terjadi kesalahan saat memproses login: ' + (err.message || 'Coba lagi.'), 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-shield-halved text-blue-400 mr-2"></i> <span>Masuk Dashboard Super Admin</span>';
-            }
-        }
-
-        // Helper: Kirim ulang email konfirmasi Supabase
-        async function resendAdminConfirmationEmail() {
-            const emailInput = document.getElementById('adminAuthEmail');
-            const email = emailInput ? emailInput.value.trim() : '';
-            if (!email || !email.includes('@')) {
-                showToast('Masukkan alamat email admin yang valid untuk mengirim ulang konfirmasi.', 'error');
-                return;
-            }
-            if (!supabaseClient) return;
-
-            showToast('Mengirim ulang email konfirmasi...', 'info');
-            try {
-                const { error } = await supabaseClient.auth.resend({
-                    type: 'signup',
-                    email: email
-                });
-                if (error) {
-                    showToast('Gagal mengirim ulang email konfirmasi: ' + error.message, 'error');
-                } else {
-                    showToast(`Email konfirmasi berhasil dikirim ke ${email}. Silakan cek inbox/spam Anda.`, 'success');
-                }
-            } catch (err) {
-                showToast('Gagal memproses pengiriman: ' + err.message, 'error');
-            }
-        }
-
-        // Helper: Registrasi akun Admin baru ke Supabase Auth
-        async function handleAdminAuthSignUp(e) {
-            e.preventDefault();
-            const emailInput = document.getElementById('adminSignUpEmail');
-            const passInput = document.getElementById('adminSignUpPassword');
-            const confirmPassInput = document.getElementById('adminSignUpConfirmPassword');
-            const btn = document.getElementById('btnAdminSignUp');
-
-            const email = emailInput ? emailInput.value.trim() : '';
-            const password = passInput ? passInput.value : '';
-            const confirmPass = confirmPassInput ? confirmPassInput.value : '';
-
-            if (!email || !password) {
-                showToast('Silakan isi email dan password.', 'error');
-                return;
-            }
-
-            if (password.length < 6) {
-                showToast('Password minimal harus 6 karakter.', 'error');
-                return;
-            }
-
-            if (password !== confirmPass) {
-                showToast('Konfirmasi password tidak cocok!', 'error');
-                return;
-            }
-
-            if (!supabaseClient) {
-                showToast('Koneksi Supabase belum siap.', 'error');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Mendaftarkan...';
-
-            try {
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: {
-                            role: 'admin',
-                            full_name: 'Super Admin'
-                        }
-                    }
-                });
-
-                if (error) {
-                    console.warn("SignUp notice:", error.message || error);
-                    if (error.message && error.message.includes('already registered')) {
-                        showToast('Email sudah terdaftar di Supabase Auth. Silakan langsung login dengan email dan password Anda.', 'info');
-                        toggleAdminSignUpForm(false);
-                        const authEmail = document.getElementById('adminAuthEmail');
-                        const authPass = document.getElementById('adminAuthPassword');
-                        if (authEmail) authEmail.value = email;
-                        if (authPass) authPass.value = password;
-                    } else {
-                        showToast('Gagal registrasi: ' + error.message, 'error');
-                    }
-                    return;
-                }
-
-                // Sesi instan jika auto-confirm aktif atau data user terbuat
-                const adminUser = {
-                    id: (data.user && data.user.id) ? data.user.id : ('admin-' + btoa(email).replace(/=/g, '').substring(0, 16)),
-                    email: email,
-                    role: 'admin',
-                    user_metadata: (data.user && data.user.user_metadata) ? data.user.user_metadata : { role: 'admin', full_name: 'Super Admin' }
-                };
-                currentAdminSession = (data.session) ? data.session : {
-                    user: adminUser,
-                    access_token: 'admin-verified-session-' + Date.now(),
-                    expires_at: Math.floor(Date.now() / 1000) + 86400,
-                    role: 'admin'
-                };
-                localStorage.setItem('supabase_admin_session', JSON.stringify(currentAdminSession));
+                currentAdminSession = data.session;
+                updateAdminSessionUI(data.session);
+                localStorage.setItem('supabase_admin_session', JSON.stringify(data.session));
                 localStorage.setItem('currentUser', JSON.stringify({
                     role: 'admin',
-                    email: email,
-                    id: adminUser.id,
-                    name: 'Super Admin'
+                    email: data.user.email,
+                    username: data.user.username || data.user.email,
+                    name: data.user.name || 'Super Admin'
                 }));
 
-                showToast('Pendaftaran akun Super Admin berhasil! Sesi admin telah aktif.', 'success');
+                showToast(`Login berhasil! Selamat datang, ${data.user.name || 'Super Admin'}`, 'success');
+                closeAdminLoginModal();
                 await renderAdmin();
                 await loadWaLeads();
-                setupWaLeadsRealtime();
                 showView('adminView');
-            } catch(err) {
-                showToast('Gagal memproses pendaftaran: ' + err.message, 'error');
+            } catch (err) {
+                showToast('Terjadi kesalahan saat memproses login: ' + err.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = 'Daftarkan Admin';
+                btn.innerHTML = '<i class="fa-solid fa-shield-halved text-blue-400 mr-2"></i> <span>Masuk Dashboard</span>';
             }
         }
 
-        // Handler: Logout Admin (mengakhiri sesi Supabase Auth)
         async function handleAdminLogout() {
-            try {
-                if (supabaseClient) {
-                    await supabaseClient.auth.signOut();
-                }
-            } catch (err) {
-                console.warn('Supabase signOut error:', err);
-            }
-
             currentAdminSession = null;
             localStorage.removeItem('currentUser');
             localStorage.removeItem('supabase_admin_session');
-
-            // Bersihkan data sensitif dari DOM
-            const leadsBody = document.getElementById('waLeadsTableBody');
-            if (leadsBody) leadsBody.innerHTML = '';
-            const adminTable = document.getElementById('adminTableBody');
-            if (adminTable) adminTable.innerHTML = '';
-            const totalCountEl = document.getElementById('adminTotalCount');
-            if (totalCountEl) totalCountEl.innerText = '0';
-            const leadsCount = document.getElementById('waLeadsCount');
-            if (leadsCount) leadsCount.innerText = '0 riwayat';
-
             showView('loginView');
-            switchLoginTab('admin');
             showToast('Anda telah keluar dari sesi Super Admin.', 'info');
         }
 
-        // Handler: Update Password Akun Admin via Supabase Auth
-        async function updateAdminPassword(e) {
-            e.preventDefault();
-            if (!currentAdminSession || !supabaseClient) {
-                showToast('Anda belum terautentikasi dengan Supabase Auth.', 'error');
-                return;
-            }
-
-            const newPass = document.getElementById('newAdminPassInput').value;
-            const confirmPass = document.getElementById('confirmAdminPassInput').value;
-            const btn = document.getElementById('btnUpdateAdminPass');
-
-            if (!newPass || newPass.length < 6) {
-                showToast('Password baru minimal harus 6 karakter.', 'error');
-                return;
-            }
-
-            if (newPass !== confirmPass) {
-                showToast('Konfirmasi password baru tidak cocok!', 'error');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Memperbarui Password...';
-
-            try {
-                const { data, error } = await supabaseClient.auth.updateUser({
-                    password: newPass
-                });
-
-                if (error) {
-                    showToast('Gagal update password di Supabase Auth: ' + error.message, 'error');
-                } else {
-                    showToast('Password akun admin berhasil diubah di Supabase Auth!', 'success');
-                    document.getElementById('adminPasswordChangeForm').reset();
-                }
-            } catch (err) {
-                showToast('Terjadi kesalahan: ' + err.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check mr-1.5"></i> Simpan Password Baru';
-            }
-        }
-
-        // Handler: Tambah Admin Baru (Auto-Confirmed) via Backend Server & Supabase Auth
         async function handleCreateNewAdmin(e) {
             e.preventDefault();
             if (!currentAdminSession || !currentAdminSession.user) {
-                showToast('Akses ditolak: Anda harus memiliki sesi Super Admin aktif untuk mendaftarkan admin baru.', 'error');
+                showToast('Akses ditolak: Anda harus login sebagai Super Admin.', 'error');
                 return;
             }
-
             const emailInput = document.getElementById('newAdminEmail');
             const passwordInput = document.getElementById('newAdminPassword');
             const nameInput = document.getElementById('newAdminName');
             const btn = document.getElementById('btnCreateNewAdmin');
-
             const email = emailInput ? emailInput.value.trim() : '';
             const password = passwordInput ? passwordInput.value : '';
             const name = nameInput ? nameInput.value.trim() : '';
 
-            if (!email || !email.includes('@') || !email.includes('.')) {
-                showToast('Silakan masukkan format alamat email yang valid.', 'error');
-                return;
-            }
-
-            if (!password || password.length < 6) {
-                showToast('Password baru minimal harus 6 karakter.', 'error');
-                return;
-            }
-
-            const originalBtnHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> <span>Mendaftarkan Admin...</span>';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Menyimpan...';
 
             try {
-                const token = currentAdminSession.access_token || ('admin-verified-session-' + Date.now());
+                const token = currentAdminSession.access_token || '';
                 const resp = await fetch('/api/admin/create-admin', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({
-                        email: email,
-                        password: password,
-                        name: name,
-                        username: name || email.split('@')[0]
-                    })
+                    body: JSON.stringify({ email, password, name, username: name || email.split('@')[0] })
                 });
-
                 const data = await resp.json();
-
                 if (!resp.ok || !data.success) {
                     showToast(data.message || 'Gagal mendaftarkan admin baru.', 'error');
                     return;
                 }
-
-                // Sukses: Notifikasi sukses jelas di antarmuka
-                showToast(data.message || 'Akun Super Admin baru berhasil dibuat dan otomatis terverifikasi!', 'success');
+                showToast(data.message || 'Akun Super Admin baru berhasil dibuat!', 'success');
                 document.getElementById('addNewAdminForm').reset();
-
-                // Sinkronkan ke local_admins di localStorage untuk fallback offline
-                try {
-                    const localAdmins = JSON.parse(localStorage.getItem('local_admins') || JSON.stringify(defaultAdmins));
-                    const newAdminObj = data.admin || {
-                        id: Date.now(),
-                        username: name || email.split('@')[0],
-                        email: email,
-                        name: name || email.split('@')[0]
-                    };
-                    if (!localAdmins.some(a => (a.email && a.email.toLowerCase() === email.toLowerCase()) || (a.username && a.username.toLowerCase() === newAdminObj.username.toLowerCase()))) {
-                        localAdmins.push(newAdminObj);
-                        localStorage.setItem('local_admins', JSON.stringify(localAdmins));
-                    }
-                } catch(e) {}
-
-                // Muat ulang daftar admin di UI
                 await loadAdminsList();
-
             } catch (err) {
-                console.warn('Eksepsi saat pendaftaran admin:', err.message || err);
-                showToast('Terjadi kesalahan koneksi saat memproses pembuatan admin baru.', 'error');
+                showToast('Terjadi kesalahan saat pendaftaran admin baru.', 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = originalBtnHtml;
+                btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> <span>Buat Akun Admin</span>';
             }
         }
 
-        // Handler: Memuat dan Menampilkan Daftar Administrator Aktif
         async function loadAdminsList() {
             const container = document.getElementById('adminAccountsList');
             if (!container) return;
-
             try {
-                const token = currentAdminSession?.access_token || 'admin-verified-session';
+                const token = currentAdminSession?.access_token || '';
                 const resp = await fetch('/api/admin/list', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 let admins = [];
                 if (resp.ok) {
                     const data = await resp.json();
-                    if (data && Array.isArray(data.admins)) {
-                        admins = data.admins;
-                    }
+                    if (data && Array.isArray(data.admins)) admins = data.admins;
                 }
-
                 if (admins.length === 0) {
                     admins = JSON.parse(localStorage.getItem('local_admins') || JSON.stringify(defaultAdmins));
                 }
-
                 container.innerHTML = admins.map(admin => {
-                    const displayName = admin.name || admin.username || admin.email;
-                    const displayEmail = admin.email || `${(admin.username || 'admin').toLowerCase()}@prossindo.com`;
-                    const currentEmail = currentAdminSession?.user?.email?.toLowerCase();
-                    const currentUsername = currentAdminSession?.user?.username?.toLowerCase();
-                    const isCurrentUser = (currentEmail && currentEmail === displayEmail.toLowerCase()) ||
-                                          (currentUsername && currentUsername === (admin.username || '').toLowerCase());
-
+                    const displayName = escapeHtml(admin.name || admin.username || admin.email || 'Admin');
+                    const displayEmail = escapeHtml(admin.email || `${(admin.username || 'admin').toLowerCase()}@prossindo.com`);
+                    const isCurrentUser = (currentAdminSession?.user?.email?.toLowerCase() === (admin.email || '').toLowerCase());
+                    const safeAdminId = escapeHtml(String(admin.id || admin.username));
                     return `
                         <div class="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/70 flex items-center justify-between transition-colors">
                             <div class="flex items-center gap-2.5 min-w-0">
@@ -1765,10 +1286,7 @@
                                     <i class="fa-solid fa-circle-check text-[9px] text-emerald-500"></i> Auto-Confirmed
                                 </span>
                                 ${!isCurrentUser ? `
-                                <button type="button" 
-                                        onclick="window.deleteAdmin('${admin.id || admin.username}')" 
-                                        class="w-7 h-7 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center justify-center transition-colors active:scale-95 ml-1" 
-                                        title="Hapus akun administrator ini">
+                                <button type="button" onclick="window.deleteAdmin('${safeAdminId}')" class="w-7 h-7 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center justify-center transition-colors active:scale-95 ml-1" title="Hapus admin">
                                     <i class="fa-solid fa-trash text-xs"></i>
                                 </button>
                                 ` : ''}
@@ -1777,74 +1295,58 @@
                     `;
                 }).join('');
             } catch (err) {
-                console.warn('Notice saat memuat daftar admin:', err);
                 container.innerHTML = '<p class="text-slate-400 text-xs italic py-2 col-span-2">Daftar administrator tersimpan aman di server.</p>';
             }
         }
 
-        // --- AUTHENTICATION: MEMBER PORTAL (USERNAME ONLY) ---
         async function handleLogin(e) {
             e.preventDefault();
             const userVal = document.getElementById('usernameInput').value.trim();
             const btn = document.getElementById('loginBtn');
-            
             if (!userVal) {
                 showToast('Silakan masukkan username.', 'error');
                 return;
             }
-
-            // Jika user mencoba masuk sebagai admin lewat form member, arahkan ke Supabase Auth
             if (userVal.toLowerCase() === 'admin' || userVal.toLowerCase() === 'superadmin') {
-                switchLoginTab('admin');
-                showToast('Akun Super Admin wajib login via Supabase Auth (Email & Password).', 'info');
-                const authEmail = document.getElementById('adminAuthEmail');
-                if (authEmail) authEmail.focus();
+                openAdminLoginModal();
+                showToast('Akun Super Admin wajib login via formulir Admin.', 'info');
                 return;
             }
-
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="ml-2">Memeriksa username member...</span>';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="ml-2">Memeriksa & menyimpan member...</span>';
             btn.disabled = true;
-
             try {
-                let memberData = null;
-
-                // 1. Cek tabel members di Supabase jika terhubung
-                if (supabaseClient) {
-                    try {
-                        const { data, error } = await supabaseClient
-                            .from('members')
-                            .select('*')
-                            .ilike('username', userVal)
-                            .maybeSingle();
-                        if (!error && data) memberData = data;
-                    } catch (err) {}
-                }
-
-                // Fallback ke penyimpanan lokal untuk Member
-                if (!memberData) {
-                    const localMembers = JSON.parse(localStorage.getItem('local_members') || JSON.stringify(defaultMembers));
-                    memberData = localMembers.find(m => m.username.toLowerCase() === userVal.toLowerCase());
-                }
-
-                if (memberData) {
+                // Memvalidasi dan menyimpan data member langsung ke tabel members Supabase secara nyata
+                const res = await fetch('/api/member/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: userVal })
+                });
+                const resData = await res.json();
+                if (res.ok && resData.success && resData.member) {
+                    const memberData = resData.member;
                     localStorage.setItem('currentUser', JSON.stringify({
                         role: 'member',
                         username: memberData.username,
                         name: memberData.name || memberData.username
                     }));
-                    if (document.getElementById('memberLoginForm')) {
-                        document.getElementById('memberLoginForm').reset();
-                    }
+
+                    // Sinkronisasi ke cache lokal untuk konsistensi offline
+                    try {
+                        let localMembers = JSON.parse(localStorage.getItem('local_members') || JSON.stringify(defaultMembers));
+                        if (!localMembers.some(m => m.username.toLowerCase() === memberData.username.toLowerCase())) {
+                            localMembers.unshift(memberData);
+                            localStorage.setItem('local_members', JSON.stringify(localMembers));
+                        }
+                    } catch(e) {}
+
                     renderCatalog();
                     showView('catalogView');
                     showToast(`Selamat datang, ${memberData.name || memberData.username}!`, 'success');
                     return;
                 }
-
-                showToast('Username member tidak terdaftar! Periksa kembali username Anda.', 'error');
+                showToast(resData.message || 'Gagal memproses autentikasi member.', 'error');
             } catch (error) {
-                console.warn("Member Login notice:", error.message || error);
-                showToast('Gagal memproses autentikasi.', 'error');
+                showToast('Gagal memproses autentikasi member: ' + error.message, 'error');
             } finally {
                 btn.innerHTML = '<span>Masuk ke Katalog Talent</span> <i class="fa-solid fa-arrow-right ml-2"></i>';
                 btn.disabled = false;
@@ -1852,20 +1354,16 @@
         }
 
         function logout() {
-            // Jika user adalah admin, jalankan handleAdminLogout
             const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
             if (savedUser && savedUser.role === 'admin') {
                 handleAdminLogout();
                 return;
             }
-
             localStorage.removeItem('currentUser');
             showView('loginView');
-            switchLoginTab('member');
             showToast('Anda telah keluar dari portal.', 'info');
         }
 
-        // --- MEMBER CATALOG VIEW (MURNI DATA DINAMIS SUPABASE FREELANCERS) ---
         async function renderCatalog() {
             const searchInput = document.getElementById('searchInput');
             const locationFilter = document.getElementById('locationFilter');
@@ -1873,68 +1371,25 @@
             const locationQ = locationFilter ? locationFilter.value : '';
             const grid = document.getElementById('catalogGrid');
             const countBadge = document.getElementById('catalogCount');
-            
             if (!grid) return;
 
             grid.innerHTML = `
                 <div class="col-span-full py-16 text-center text-slate-500">
                     <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600 mb-2"></i>
-                    <p class="text-sm font-medium">Memuat data talenta dari database Supabase...</p>
+                    <p class="text-sm font-medium">Memuat katalog dari proxy database...</p>
                 </div>
             `;
 
             let freelancersList = [];
-            let dbError = null;
-
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('freelancers')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-
-                    if (error) {
-                        dbError = error;
-                        console.warn("Supabase query error:", error);
-                    } else if (Array.isArray(data)) {
-                        freelancersList = data;
-                    }
-                } catch (e) {
-                    dbError = e;
-                    console.warn("Gagal terhubung ke database Supabase:", e.message || e);
+            try {
+                const { data, error } = await supabaseClient.from('freelancers').select('*').order('created_at', { ascending: false });
+                if (!error && Array.isArray(data)) {
+                    freelancersList = data;
                 }
-            } else {
-                dbError = new Error('Koneksi Supabase belum terinisialisasi.');
+            } catch (e) {
+                console.warn("Gagal terhubung ke database:", e);
             }
 
-            // Tangani jika terjadi error koneksi atau tabel belum dibuat di Supabase
-            if (dbError) {
-                const isTableMissing = dbError.code === 'PGRST205' || (dbError.message && dbError.message.includes('not find the table'));
-                grid.innerHTML = `
-                    <div class="col-span-full bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-                        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3 text-xl">
-                            <i class="fa-solid fa-database"></i>
-                        </div>
-                        <h4 class="font-bold text-amber-900 text-base mb-1">
-                            ${isTableMissing ? "Tabel 'freelancers' Belum Ada di Supabase" : "Koneksi Database Supabase Terkendala"}
-                        </h4>
-                        <p class="text-xs text-amber-800 max-w-md mx-auto mb-4 leading-relaxed">
-                            ${isTableMissing 
-                                ? "Katalog saat ini sudah murni mengambil data dinamis dari Supabase, namun tabel <code>freelancers</code> belum dibuat di project database Anda. Silakan jalankan skrip SQL di Supabase SQL Editor."
-                                : "Terjadi kendala saat memuat data dari Supabase: " + (dbError.message || 'Koneksi gagal')}
-                        </p>
-                        <div class="flex items-center justify-center gap-3">
-                            <button onclick="renderCatalog()" class="bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl border border-slate-200 transition-all shadow-sm">
-                                <i class="fa-solid fa-rotate-right mr-1"></i> Coba Lagi
-                            </button>
-                        </div>
-                    </div>
-                `;
-                if (countBadge) countBadge.innerText = '0 talenta';
-                return;
-            }
-
-            // Filter HANYA berdasarkan nama talent
             const filtered = freelancersList.filter(f => {
                 const matchSearch = (f.name || '').toLowerCase().includes(searchQ);
                 const matchLocation = locationQ === "" || f.location === locationQ;
@@ -1945,26 +1400,17 @@
             grid.innerHTML = '';
 
             if (filtered.length === 0) {
-                if (freelancersList.length === 0) {
-                    grid.innerHTML = `
-                        <div class="col-span-full bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-sm">
-                            <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-2xl">
-                                <i class="fa-solid fa-users-slash"></i>
-                            </div>
-                            <h4 class="font-bold text-slate-800 text-base mb-1">Belum Ada Data Talent di Database</h4>
-                            <p class="text-xs text-slate-500 max-w-sm mx-auto">
-                                Database Supabase saat ini belum memiliki rekaman data talent. Super Admin dapat menambahkan talent baru melalui dashboard.
-                            </p>
+                grid.innerHTML = `
+                    <div class="col-span-full bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-sm">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-2xl">
+                            <i class="fa-solid fa-users-slash"></i>
                         </div>
-                    `;
-                } else {
-                    grid.innerHTML = `
-                        <div class="col-span-full py-12 text-center text-slate-400">
-                            <i class="fa-solid fa-magnifying-glass text-2xl mb-2 text-slate-300"></i>
-                            <p class="text-sm">Belum ada talenta di database yang cocok dengan nama "${searchQ}".</p>
-                        </div>
-                    `;
-                }
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Belum Ada Data Talent</h4>
+                        <p class="text-xs text-slate-500 max-w-sm mx-auto">
+                            Super Admin dapat menambahkan talent baru melalui dashboard.
+                        </p>
+                    </div>
+                `;
                 return;
             }
 
@@ -1975,26 +1421,30 @@
                 } catch(e) {
                     imgArr = Array.isArray(f.images) ? f.images : (f.images ? [f.images] : []);
                 }
-                const thumb = (imgArr && imgArr.length > 0 && imgArr[0]) ? imgArr[0] : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+                const rawThumb = (imgArr && imgArr.length > 0 && imgArr[0]) ? String(imgArr[0]) : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+                const safeThumb = encodeURI(rawThumb);
                 const badgeColor = f.status === 'Available' ? 'bg-emerald-500' : 'bg-red-500';
-                
+                const safeName = escapeHtml(f.name || 'Tanpa Nama');
+                const safeService = escapeHtml(f.service || '-');
+                const safeLocation = escapeHtml(f.location || '-');
+                const safeStatus = escapeHtml(f.status || 'Available');
+
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-slate-100 overflow-hidden cursor-pointer flex flex-col justify-between";
                 card.onclick = () => openDetail(f);
-                
-                const fJsonStr = JSON.stringify(f).replace(/"/g, '&quot;');
+
                 card.innerHTML = `
                     <div>
                         <div class="relative h-48 w-full bg-slate-200">
-                            <img src="${thumb}" alt="${f.name || 'Talent'}" class="w-full h-full object-cover">
+                            <img src="${safeThumb}" alt="${safeName}" class="w-full h-full object-cover">
                             <div class="absolute top-3 left-3 ${badgeColor} text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
-                                <div class="w-1.5 h-1.5 bg-white rounded-full mr-1.5"></div> ${f.status || 'Available'}
+                                <div class="w-1.5 h-1.5 bg-white rounded-full mr-1.5"></div> ${safeStatus}
                             </div>
                         </div>
                         <div class="p-4 pb-2">
-                            <h4 class="font-bold text-slate-900 text-lg mb-1">${f.name || 'Tanpa Nama'}</h4>
-                            <p class="text-blue-600 text-xs font-semibold mb-2"><i class="fa-solid fa-tag mr-1"></i> ${f.service || '-'}</p>
-                            <p class="text-slate-500 text-xs"><i class="fa-solid fa-location-dot mr-1"></i> ${f.location || '-'}</p>
+                            <h4 class="font-bold text-slate-900 text-lg mb-1">${safeName}</h4>
+                            <p class="text-blue-600 text-xs font-semibold mb-2"><i class="fa-solid fa-tag mr-1"></i> ${safeService}</p>
+                            <p class="text-slate-500 text-xs"><i class="fa-solid fa-location-dot mr-1"></i> ${safeLocation}</p>
                         </div>
                     </div>
                     <div class="p-4 pt-0">
@@ -2002,46 +1452,37 @@
                             <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
                                 <i class="fa-regular fa-eye"></i> Detail
                             </span>
-                            <a href="${getTalentWaUrl(f)}" 
-                               target="_blank" 
-                               rel="noopener noreferrer" 
-                               data-talent='${fJsonStr}' 
-                               onclick="event.stopPropagation(); logWaLeadFromCard(${fJsonStr})" 
-                               class="talent-card-wa-link inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#25D366] text-xs font-bold transition-all active:scale-95 shadow-sm" 
-                               title="Hubungi Admin untuk Talent ini via WhatsApp">
+                            <a href="${getTalentWaUrl(f)}" target="_blank" rel="noopener noreferrer" class="talent-card-wa-link inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#25D366] text-xs font-bold transition-all active:scale-95 shadow-sm" title="Hubungi Admin untuk Talent ini via WhatsApp">
                                 <i class="fa-brands fa-whatsapp text-sm"></i>
                                 <span>Hubungi WA</span>
                             </a>
                         </div>
                     </div>
                 `;
+                const waLink = card.querySelector('.talent-card-wa-link');
+                if (waLink) {
+                    waLink.onclick = (event) => {
+                        event.stopPropagation();
+                        logWaLeadFromCard(f);
+                    };
+                }
                 grid.appendChild(card);
             });
         }
 
-        // --- MEMBER DETAIL VIEW ---
         function openDetail(fData) {
-            // Simpan posisi scroll sebelum berpindah ke halaman detail talent
             lastCatalogScrollPosition = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
-
             currentDetailData = fData;
-            const dName = document.getElementById('detailName');
-            const dService = document.getElementById('detailService');
-            const dLocation = document.getElementById('detailLocation');
-            const dDesc = document.getElementById('detailDesc');
-            const badge = document.getElementById('detailBadge');
-
-            if (dName) dName.innerText = (fData && fData.name) || 'Tanpa Nama';
-            if (dService) dService.innerText = (fData && fData.service) || '-';
-            if (dLocation) dLocation.innerText = (fData && fData.location) || '-';
-            if (dDesc) dDesc.innerText = (fData && fData.description) || '';
+            document.getElementById('detailName').innerText = fData.name || 'Tanpa Nama';
+            document.getElementById('detailService').innerText = fData.service || '-';
+            document.getElementById('detailLocation').innerText = fData.location || '-';
+            document.getElementById('detailDesc').innerText = fData.description || '';
             
-            if (badge) {
-                const status = (fData && fData.status) || 'Available';
-                badge.innerText = status;
-                badge.className = `absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${status === 'Available' ? 'bg-emerald-500' : 'bg-red-500'}`;
-            }
-
+            const badge = document.getElementById('detailBadge');
+            const status = fData.status || 'Available';
+            badge.innerText = status;
+            badge.className = `absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${status === 'Available' ? 'bg-emerald-500' : 'bg-red-500'}`;
+            
             currentFreelancerIndex = 0;
             updateCarousel();
             showView('detailView', true);
@@ -2052,29 +1493,15 @@
                 if (typeof event.preventDefault === 'function') event.preventDefault();
                 if (typeof event.stopPropagation === 'function') event.stopPropagation();
             }
-            // Sembunyikan detail dan kembali ke catalogView tanpa reset scroll ke 0
             showView('catalogView', false);
-
-            // Kembalikan posisi scroll layar ke posisi saat kartu talent diklik
             const targetY = lastCatalogScrollPosition;
             requestAnimationFrame(() => {
-                window.scrollTo({
-                    top: targetY,
-                    left: 0,
-                    behavior: 'instant'
-                });
-                setTimeout(() => {
-                    window.scrollTo({
-                        top: targetY,
-                        left: 0,
-                        behavior: 'instant'
-                    });
-                }, 10);
+                window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
             });
         }
 
         function getParsedImages() {
-            if(!currentDetailData || !currentDetailData.images) return [];
+            if (!currentDetailData || !currentDetailData.images) return [];
             try {
                 return typeof currentDetailData.images === 'string' ? JSON.parse(currentDetailData.images) : currentDetailData.images;
             } catch(e) {
@@ -2086,7 +1513,6 @@
             const imgs = getParsedImages();
             const detailImg = document.getElementById('detailImage');
             const counter = document.getElementById('imageCounter');
-
             if (imgs.length === 0 || !imgs[currentFreelancerIndex]) {
                 if (detailImg) detailImg.src = 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
                 if (counter) counter.innerText = '0/0';
@@ -2098,7 +1524,7 @@
 
         function nextImage() {
             const imgs = getParsedImages();
-            if(imgs.length > 0) {
+            if (imgs.length > 0) {
                 currentFreelancerIndex = (currentFreelancerIndex + 1) % imgs.length;
                 updateCarousel();
             }
@@ -2106,102 +1532,34 @@
 
         function prevImage() {
             const imgs = getParsedImages();
-            if(imgs.length > 0) {
+            if (imgs.length > 0) {
                 currentFreelancerIndex = (currentFreelancerIndex - 1 + imgs.length) % imgs.length;
                 updateCarousel();
             }
         }
 
-        // --- LIGHTBOX FULL PHOTO MODAL ---
         function openLightbox() {
             const imgs = getParsedImages();
             if (!imgs || imgs.length === 0) return;
-            const currentSrc = imgs[currentFreelancerIndex] || imgs[0];
-            const lbImg = document.getElementById('lightboxImage');
-            if (lbImg) lbImg.src = currentSrc;
-            const counter = document.getElementById('lightboxCounter');
-            if (counter) counter.innerText = `${currentFreelancerIndex + 1} / ${imgs.length}`;
-            const modal = document.getElementById('lightboxModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                lockBodyScroll();
-            }
+            document.getElementById('lightboxImage').src = imgs[currentFreelancerIndex] || imgs[0];
+            document.getElementById('lightboxCounter').innerText = `${currentFreelancerIndex + 1} / ${imgs.length}`;
+            document.getElementById('lightboxModal').style.display = 'flex';
+            lockBodyScroll();
         }
 
         function closeLightbox() {
-            const m = document.getElementById('lightboxModal');
-            if (m) {
-                m.style.display = 'none';
-                unlockBodyScroll();
-            }
+            document.getElementById('lightboxModal').style.display = 'none';
+            unlockBodyScroll();
         }
 
         function handleLightboxBackdropClick(e) {
-            if (e.target.id === 'lightboxModal') {
-                closeLightbox();
-            }
+            if (e.target.id === 'lightboxModal') closeLightbox();
         }
 
-        // --- HELPER BUKA WHATSAPP AMAN (TAB BARU / TARGET _BLANK) ---
-        // Mencegah error pemblokiran frame (layar abu-abu) dalam iframe
-        function openWhatsAppUrl(url) {
-            if (!url) return;
-            try {
-                // Selalu gunakan _blank dengan rel noopener noreferrer
-                const win = window.open(url, '_blank', 'noopener,noreferrer');
-                if (!win || win.closed || typeof win.closed === 'undefined') {
-                    // Fallback jika popup blocker browser membatasi window.open
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.target = '_blank';
-                    link.rel = 'noopener noreferrer';
-                    document.body.appendChild(link);
-                    link.click();
-                    setTimeout(() => {
-                        if (link.parentNode) link.parentNode.removeChild(link);
-                    }, 200);
-                }
-            } catch (err) {
-                console.warn('Fallback window.open:', err);
-                const link = document.createElement('a');
-                link.href = url;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                document.body.appendChild(link);
-                link.click();
-                setTimeout(() => {
-                    if (link.parentNode) link.parentNode.removeChild(link);
-                }, 200);
-            }
-        }
-
-        function openContactModalForTalent(fData) {
-            if (!fData) return;
-            currentDetailData = fData;
-            openContactModal();
-        }
-
-        // --- POPUP MODAL HUBUNGI WA ADMIN & RIWAYAT (DILENGKAPI RATE LIMITING / ANTI-SPAM) ---
-        let lastWaSubmitTime = 0;
-        const WA_COOLDOWN_MS = 3000; // Jeda 3 detik anti-spam
-        let isWaSubmitting = false;
-
-        async function openContactModal() {
+        function openContactModal() {
             if (!currentDetailData) return;
-
-            // Pengecekan Rate Limiting / Cooldown 3 detik
-            const now = Date.now();
-            const elapsed = now - lastWaSubmitTime;
-            if (elapsed < WA_COOLDOWN_MS) {
-                const remainingSec = Math.ceil((WA_COOLDOWN_MS - elapsed) / 1000);
-                showToast(`Mohon tunggu ${remainingSec} detik sebelum menghubungi admin kembali.`, 'info');
-                return;
-            }
-
-            const talentNameEl = document.getElementById('modalTalentName');
-            const talentServiceEl = document.getElementById('modalTalentService');
-            if (talentNameEl) talentNameEl.innerText = currentDetailData.name || '-';
-            if (talentServiceEl) talentServiceEl.innerText = currentDetailData.service || '-';
+            document.getElementById('modalTalentName').innerText = currentDetailData.name || '-';
+            document.getElementById('modalTalentService').innerText = currentDetailData.service || '-';
             
             let savedUser = null;
             try {
@@ -2209,45 +1567,14 @@
             } catch(e) {}
             
             const nameInput = document.getElementById('modalMemberName');
-            if (nameInput) {
-                if (savedUser && (savedUser.name || savedUser.username)) {
-                    nameInput.value = savedUser.name || savedUser.username;
-                } else {
-                    nameInput.value = '';
-                }
-            }
+            if (nameInput) nameInput.value = (savedUser && (savedUser.name || savedUser.username)) ? (savedUser.name || savedUser.username) : '';
             const refInput = document.getElementById('modalReference');
             if (refInput) refInput.value = '';
-
-            // Perbarui tautan WA langsung tanpa form (target="_blank" dan rel="noopener noreferrer")
-            const linkDirect = document.getElementById('linkDirectWa');
-            if (linkDirect) {
-                const currentWa = localStorage.getItem('adminWa') || '6285111029242';
-                let cleanWa = String(currentWa).replace(/\D/g, '');
-                if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
-                if (!cleanWa) cleanWa = '6285111029242';
-                const tName = currentDetailData.name || 'Talent';
-                const directMsg = `Halo Admin PROSS INDO, saya tertarik berkonsultasi mengenai talent: ${tName}.`;
-                linkDirect.href = `https://wa.me/${cleanWa}?text=${encodeURIComponent(directMsg)}`;
-                linkDirect.target = '_blank';
-                linkDirect.rel = 'noopener noreferrer';
-            }
 
             const contactModal = document.getElementById('contactModal');
             if (contactModal) {
                 contactModal.style.display = 'flex';
                 lockBodyScroll();
-            }
-
-            // Segarkan nomor WA admin secara asinkron dari database Supabase agar selalu update
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient.from('admin_config').select('wa_number').limit(1).single();
-                    if (data && !error && data.wa_number) {
-                        localStorage.setItem('adminWa', data.wa_number);
-                        updateAdminWaDisplay(data.wa_number);
-                    }
-                } catch(e) {}
             }
         }
 
@@ -2260,161 +1587,58 @@
         }
 
         function handleContactModalBackdropClick(e) {
-            if (e.target.id === 'contactModal') {
-                closeContactModal();
-            }
+            if (e.target.id === 'contactModal') closeContactModal();
         }
 
         async function submitContactForm(e) {
             e.preventDefault();
-
-            const now = Date.now();
-            const elapsed = now - lastWaSubmitTime;
-
-            // Validasi Rate Limiting & Anti-Spam: Mencegah spam klik beruntun
-            if (isWaSubmitting) {
-                showToast('Permintaan sedang diproses, mohon tunggu sebentar...', 'info');
-                return;
-            }
-
-            if (elapsed < WA_COOLDOWN_MS) {
-                const remainingSec = Math.ceil((WA_COOLDOWN_MS - elapsed) / 1000);
-                showToast(`Anti-Spam: Mohon tunggu ${remainingSec} detik sebelum mengirim permintaan baru.`, 'error');
-                return;
-            }
-
-            const memberNameInput = document.getElementById('modalMemberName');
-            const referenceInput = document.getElementById('modalReference');
+            const memberName = document.getElementById('modalMemberName').value.trim();
+            const referenceVal = document.getElementById('modalReference').value.trim();
             const submitBtn = document.getElementById('btnSubmitContact');
-
-            const memberName = memberNameInput ? memberNameInput.value.trim() : '';
-            const referenceVal = referenceInput ? referenceInput.value.trim() : '';
 
             if (!memberName || !referenceVal) {
                 showToast('Harap lengkapi Nama Member dan Referensi.', 'error');
                 return;
             }
 
-            // Aktifkan lock anti-spam dan catat waktu submit
-            isWaSubmitting = true;
-            lastWaSubmitTime = Date.now();
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Menghubungkan...</span>';
+
+            const rawWa = localStorage.getItem('adminWa') || '6285111029242';
+            let cleanWa = String(rawWa).replace(/\D/g, '');
+            if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
+            if (!cleanWa) cleanWa = '6285111029242';
 
             const talentName = currentDetailData ? currentDetailData.name : 'Talent';
             const talentService = currentDetailData ? currentDetailData.service : '';
 
-            // Tampilkan feedback loading pada tombol
-            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-base"></i><span>Menghubungkan...</span>';
-            }
-
-            // 1. Dapatkan nomor WhatsApp admin terkini secara dinamis dari Supabase (atau cache lokal)
-            let wa = localStorage.getItem('adminWa') || '6285111029242';
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient.from('admin_config').select('wa_number').limit(1).single();
-                    if (data && !error && data.wa_number) {
-                        wa = data.wa_number;
-                        localStorage.setItem('adminWa', data.wa_number);
-                    }
-                } catch (configErr) {
-                    console.warn('Gagal membaca admin_config terkini, menggunakan cache lokal:', configErr);
-                }
-            }
-
-            // Standarisasi nomor WA (angka murni, awali 62)
-            let cleanWa = String(wa).replace(/\D/g, '');
-            if (cleanWa.startsWith('0')) {
-                cleanWa = '62' + cleanWa.substring(1);
-            }
-            if (!cleanWa) {
-                cleanWa = '6285111029242';
-            }
-
-            const msg = `Halo Admin PROSS INDO, saya tertarik menggunakan jasa talent:\n\n• Nama Talent: *${talentName}*\n• Jasa: ${talentService}\n• Nama Member: *${memberName}*\n• Referensi: ${referenceVal}\n\nMohon informasi ketersediaan dan rate card-nya. Terima kasih.`;
+            const msg = `Halo Admin PROSS INDO, saya tertarik menggunakan jasa talent:\n\n  Nama Talent: *${talentName}*\n  Jasa: ${talentService}\n  Nama Member: *${memberName}*\n  Referensi: ${referenceVal}\n\nMohon informasi ketersediaan dan rate card-nya. Terima kasih.`;
             const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`;
 
-            // 2. Simpan (INSERT) data ke tabel wa_leads di Supabase secara real-time dengan status default 'Baru'
-            let insertSuccess = false;
-            let insertedId = null;
-
-            if (supabaseClient) {
-                try {
-                    let { data, error } = await supabaseClient.from('wa_leads').insert([{
-                        member_name: memberName,
-                        talent_name: talentName,
-                        reference: referenceVal,
-                        service: talentService,
-                        status: 'Baru'
-                    }]).select();
-
-                    // Fallback jika kolom status belum ditambahkan di Supabase
-                    if (error && error.code === 'PGRST204') {
-                        const retry = await supabaseClient.from('wa_leads').insert([{
-                            member_name: memberName,
-                            talent_name: talentName,
-                            reference: referenceVal,
-                            service: talentService
-                        }]).select();
-                        data = retry.data;
-                        error = retry.error;
-                    }
-
-                    if (error) {
-                        console.warn('Notice saat INSERT ke tabel wa_leads Supabase:', error.message || error);
-                    } else if (data && data[0]) {
-                        insertSuccess = true;
-                        insertedId = data[0].id;
-                        saveLocalLeadStatus(insertedId, 'Baru');
-                        console.log('Berhasil INSERT ke wa_leads Supabase, ID:', insertedId);
-                    }
-                } catch (err) {
-                    console.warn('Koneksi Supabase wa_leads notice:', err.message || err);
-                }
-            }
-
-            // Simpan juga ke cache lokal sebagai backup offline
             try {
-                let localLeads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
-                const newLeadItem = {
-                    id: insertedId || ('lead_' + Date.now()),
+                await supabaseClient.from('wa_leads').insert([{
                     member_name: memberName,
                     talent_name: talentName,
-                    service: talentService,
                     reference: referenceVal,
-                    status: 'Baru',
-                    created_at: new Date().toISOString()
-                };
-                localLeads.unshift(newLeadItem);
-                localStorage.setItem('local_wa_leads', JSON.stringify(localLeads));
-                saveLocalLeadStatus(newLeadItem.id, 'Baru');
-            } catch(e) {}
+                    service: talentService
+                }]);
+            } catch (err) {
+                console.warn('Lead insert error:', err);
+            }
 
             closeContactModal();
-
-            // Lepaskan lock submit button setelah jeda cooldown 3 detik
             setTimeout(() => {
-                isWaSubmitting = false;
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnHtml;
-                }
-            }, WA_COOLDOWN_MS);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp text-lg"></i> <span>Lanjutkan ke WA</span>';
+            }, 1000);
 
-            showToast(`Membuka WhatsApp Admin PROSS INDO... <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="underline font-bold ml-1.5 inline-flex items-center gap-1">Buka Manual <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>`, 'success');
-
-            // 3. Buka WhatsApp secara aman di tab baru (_blank) dan rel="noopener noreferrer" tanpa memblokir iframe
-            setTimeout(() => {
-                openWhatsAppUrl(waUrl);
-            }, 50);
+            showToast('Membuka WhatsApp Admin...', 'success');
+            window.open(waUrl, '_blank', 'noopener,noreferrer');
         }
 
-        // --- SUPER ADMIN VIEW & LOCAL FILE PICKER ---
         function handleFileSelect(e) {
             const files = Array.from(e.target.files || []);
             if (!files.length) return;
-
             let loadedCount = 0;
             files.forEach(file => {
                 if (!file.type.startsWith('image/')) return;
@@ -2422,9 +1646,7 @@
                 reader.onload = (event) => {
                     selectedImages.push(event.target.result);
                     loadedCount++;
-                    if (loadedCount === files.length) {
-                        renderImagePreviews();
-                    }
+                    if (loadedCount === files.length) renderImagePreviews();
                 };
                 reader.readAsDataURL(file);
             });
@@ -2435,12 +1657,10 @@
             const container = document.getElementById('imagePreviewContainer');
             if (!container) return;
             container.innerHTML = '';
-
             if (selectedImages.length === 0) {
                 container.innerHTML = '<p class="text-xs text-slate-400 italic py-1">Belum ada foto yang dipilih dari perangkat.</p>';
                 return;
             }
-
             selectedImages.forEach((src, idx) => {
                 const wrap = document.createElement('div');
                 wrap.className = 'relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 shadow-sm group bg-slate-100';
@@ -2460,107 +1680,60 @@
         }
 
         async function renderAdmin() {
-            // Guard: Hanya izinkan rendering dashboard admin jika sesi Supabase Auth aktif
-            if (!currentAdminSession || !currentAdminSession.user) {
-                console.warn('renderAdmin diabaikan: Tidak ada sesi Supabase Auth yang aktif.');
-                return;
-            }
-
+            if (!currentAdminSession || !currentAdminSession.user) return;
             const wa = localStorage.getItem('adminWa') || '6285111029242';
             updateAdminWaDisplay(wa);
 
-            // 1. Load Freelancers murni dari Supabase
             let fData = [];
-            let fError = null;
-            if (supabaseClient) {
-                try {
-                    const res = await supabaseClient.from('freelancers').select('*').order('created_at', { ascending: false });
-                    if (res.error) {
-                        fError = res.error;
-                        console.warn("Supabase freelancers error:", res.error);
-                    } else if (Array.isArray(res.data)) {
-                        fData = res.data;
-                    }
-                } catch (e) {
-                    fError = e;
-                }
-            }
+            try {
+                const res = await supabaseClient.from('freelancers').select('*').order('created_at', { ascending: false });
+                if (!res.error && Array.isArray(res.data)) fData = res.data;
+            } catch (e) {}
 
             const totalCountEl = document.getElementById('adminTotalCount');
             if (totalCountEl) totalCountEl.innerText = fData.length;
-            
+
             const tbody = document.getElementById('adminTableBody');
             tbody.innerHTML = '';
-
-            if (fError) {
-                const isTableMissing = fError.code === 'PGRST205' || (fError.message && fError.message.includes('not find the table'));
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="3" class="py-6 px-4">
-                            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 flex flex-col sm:flex-row items-center justify-between gap-3">
-                                <div>
-                                    <p class="font-bold flex items-center gap-1.5 text-amber-900">
-                                        <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
-                                        ${isTableMissing ? "Tabel 'freelancers' belum terdeteksi di database Supabase" : "Gagal terhubung ke tabel 'freelancers' Supabase"}
-                                    </p>
-                                    <p class="text-amber-700 mt-0.5">
-                                        ${isTableMissing 
-                                            ? "Tabel 'freelancers' belum terdeteksi di database Supabase. Pastikan tabel telah dibuat di database Anda." 
-                                            : (fError.message || "Terjadi kendala jaringan database.")}
-                                    </p>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            } else if (fData.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="3" class="py-8 text-center text-slate-400 text-xs italic">
-                            <i class="fa-solid fa-inbox text-2xl text-slate-300 block mb-1.5"></i>
-                            Belum ada data talent di database Supabase. Tambahkan talent baru menggunakan formulir di atas.
-                        </td>
-                    </tr>
-                `;
+            if (fData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="py-8 text-center text-slate-400 text-xs italic">Belum ada data talent di database.</td></tr>';
             } else {
                 fData.forEach(f => {
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-slate-50 transition-colors";
-                    const fJson = JSON.stringify(f).replace(/'/g, "&#39;");
+                    const safeName = escapeHtml(f.name || 'Tanpa Nama');
+                    const safeService = escapeHtml(f.service || '-');
+                    const safeStatus = escapeHtml(f.status || 'Available');
                     tr.innerHTML = `
                         <td class="py-3 px-4">
-                            <p class="font-bold text-slate-900">${f.name || 'Tanpa Nama'}</p>
-                            <p class="text-xs text-slate-500">${f.service || '-'}</p>
+                            <p class="font-bold text-slate-900">${safeName}</p>
+                            <p class="text-xs text-slate-500">${safeService}</p>
                         </td>
                         <td class="py-3 px-4">
-                            <span class="px-2 py-1 text-[10px] font-bold rounded-md ${f.status === 'Available' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}">${f.status || 'Available'}</span>
+                            <span class="px-2 py-1 text-[10px] font-bold rounded-md ${f.status === 'Available' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}">${safeStatus}</span>
                         </td>
                         <td class="py-3 px-4 text-right whitespace-nowrap">
-                            <button type="button" data-freelancer='${fJson}' class="edit-f-btn text-blue-500 hover:text-blue-700 mr-3" title="Edit talent"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button type="button" onclick="window.deleteTalent('${f.id}')" class="text-red-500 hover:text-red-700 p-1 active:scale-95 transition-transform" title="Hapus talent"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" class="edit-f-btn text-blue-500 hover:text-blue-700 mr-3" title="Edit talent"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button type="button" class="del-f-btn text-red-500 hover:text-red-700 p-1 active:scale-95 transition-transform" title="Hapus talent"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     `;
+                    tr.querySelector('.edit-f-btn').onclick = () => editFreelancer(f);
+                    tr.querySelector('.del-f-btn').onclick = () => window.deleteTalent(f.id);
                     tbody.appendChild(tr);
                 });
-
-                // Wire up edit buttons safely
-                tbody.querySelectorAll('.edit-f-btn').forEach(btn => {
-                    btn.onclick = () => {
-                        const data = JSON.parse(btn.getAttribute('data-freelancer'));
-                        editFreelancer(data);
-                    };
-                });
             }
 
-            // 2. Load Members (Klien)
             let mData = [];
-            if (supabaseClient) {
-                try {
-                    const res = await supabaseClient.from('members').select('*').order('created_at', { ascending: false });
-                    if (!res.error && res.data && res.data.length > 0) mData = res.data;
-                } catch (e) {}
-            }
-            if (mData.length === 0) {
+            let memberFetchSuccess = false;
+            try {
+                const res = await supabaseClient.from('members').select('*').order('created_at', { ascending: false });
+                if (!res.error && Array.isArray(res.data)) {
+                    mData = res.data;
+                    memberFetchSuccess = true;
+                }
+            } catch (e) {}
+
+            if (!memberFetchSuccess) {
                 mData = JSON.parse(localStorage.getItem('local_members') || JSON.stringify(defaultMembers));
             }
 
@@ -2570,329 +1743,59 @@
                 const mTr = document.createElement('tr');
                 mTr.className = "hover:bg-slate-50 transition-colors";
                 mTr.innerHTML = `
-                    <td class="py-3 px-4 font-semibold text-slate-800">${m.username}</td>
-                    <td class="py-3 px-4 text-slate-700">${m.name || m.username}</td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(m.username || '-')}</td>
+                    <td class="py-3 px-4 text-slate-700">${escapeHtml(m.name || m.username || '-')}</td>
                     <td class="py-3 px-4 text-right">
-                        <button type="button" onclick="window.deleteMember('${m.username}')" class="text-red-500 hover:text-red-700 font-medium text-xs p-1 active:scale-95 transition-transform"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
+                        <button type="button" class="del-m-btn text-red-500 hover:text-red-700 font-medium text-xs p-1 active:scale-95 transition-transform"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
                     </td>
                 `;
+                mTr.querySelector('.del-m-btn').onclick = () => window.deleteMember(m.username);
                 mBody.appendChild(mTr);
             });
 
-            // 3. Load Riwayat Klik Hubungi WA Admin live dari Supabase
             await loadWaLeads();
-            setupWaLeadsRealtime();
-
-            // 4. Sinkronisasi tampilan Pengaturan Akun Admin
-            let currentAdmin = {};
-            try {
-                currentAdmin = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            } catch(e) {}
-            const activeUsername = currentAdmin.username || 'admin';
-            const currAdminInput = document.getElementById('currentAdminUsername');
-            if (currAdminInput) currAdminInput.value = activeUsername;
-            const newAdminInput = document.getElementById('newAdminUsername');
-            if (newAdminInput) newAdminInput.value = '';
-            const adminBadge = document.getElementById('adminActiveBadge');
-            if (adminBadge) adminBadge.innerText = `@${activeUsername}`;
-
-            // 5. Muat daftar akun administrator terdaftar
             await loadAdminsList();
-        }
-
-        // --- PENGATURAN AKUN SUPER ADMIN ---
-        async function updateAdminUsername(e) {
-            e.preventDefault();
-            const newUsernameInput = document.getElementById('newAdminUsername');
-            const submitBtn = document.getElementById('btnUpdateAdminUser');
-            const newUsername = (newUsernameInput ? newUsernameInput.value : '').trim();
-
-            let currentUser = null;
-            try {
-                currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            } catch (err) {
-                currentUser = {};
-            }
-
-            const currentUsername = (currentUser.username || 'admin').trim();
-
-            // 1. Validasi Keamanan dan Format Username
-            if (!newUsername) {
-                showToast('Silakan masukkan username baru.', 'error');
-                return;
-            }
-
-            if (newUsername.length < 3) {
-                showToast('Username minimal harus 3 karakter.', 'error');
-                return;
-            }
-
-            if (newUsername.length > 30) {
-                showToast('Username maksimal 30 karakter.', 'error');
-                return;
-            }
-
-            if (/\s/.test(newUsername)) {
-                showToast('Username tidak boleh mengandung spasi.', 'error');
-                return;
-            }
-
-            if (!/^[a-zA-Z0-9._-]+$/.test(newUsername)) {
-                showToast('Username hanya boleh berupa huruf, angka, titik, strip (-), atau garis bawah (_).', 'error');
-                return;
-            }
-
-            if (newUsername.toLowerCase() === currentUsername.toLowerCase()) {
-                showToast('Username baru tidak boleh sama dengan username saat ini.', 'error');
-                return;
-            }
-
-            // Indikator status tombol proses
-            const originalBtnHtml = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan ke Database...';
-
-            try {
-                // 2. Cek apakah username baru sudah digunakan di tabel admins Supabase
-                if (supabaseClient) {
-                    try {
-                        const { data: existingAdmin, error: checkErr } = await supabaseClient
-                            .from('admins')
-                            .select('id, username')
-                            .ilike('username', newUsername)
-                            .maybeSingle();
-
-                        if (!checkErr && existingAdmin && existingAdmin.username.toLowerCase() !== currentUsername.toLowerCase()) {
-                            showToast(`Username "${newUsername}" sudah digunakan oleh admin lain!`, 'error');
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalBtnHtml;
-                            return;
-                        }
-                    } catch (checkErr) {
-                        console.warn("Pengecekan username unik di Supabase:", checkErr);
-                    }
-                }
-
-                // Cek juga pada local_admins
-                const localAdmins = JSON.parse(localStorage.getItem('local_admins') || JSON.stringify(defaultAdmins));
-                const duplicateInLocal = localAdmins.some(
-                    a => a.username.toLowerCase() === newUsername.toLowerCase() && a.username.toLowerCase() !== currentUsername.toLowerCase()
-                );
-                if (duplicateInLocal) {
-                    showToast(`Username "${newUsername}" sudah digunakan oleh admin lain!`, 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnHtml;
-                    return;
-                }
-
-                // 3. Update data ke tabel admins di database Supabase secara permanen
-                let supabaseUpdated = false;
-                let targetAdminId = currentUser.id || null;
-
-                if (supabaseClient) {
-                    // Cari ID admin yang sesuai di Supabase jika belum tersimpan di sesi
-                    if (!targetAdminId) {
-                        try {
-                            const { data: foundAdmin } = await supabaseClient
-                                .from('admins')
-                                .select('id, username')
-                                .ilike('username', currentUsername)
-                                .maybeSingle();
-                            if (foundAdmin && foundAdmin.id) {
-                                targetAdminId = foundAdmin.id;
-                            }
-                        } catch (lookupErr) {
-                            console.warn("Lookup admin id di Supabase:", lookupErr);
-                        }
-                    }
-
-                    // Eksekusi query UPDATE ke tabel admins di Supabase
-                    let updateRes = null;
-                    try {
-                        if (targetAdminId) {
-                            updateRes = await supabaseClient
-                                .from('admins')
-                                .update({ username: newUsername })
-                                .eq('id', targetAdminId)
-                                .select();
-                        }
-
-                        // Jika belum berhasil atau tidak ada targetAdminId, update berdasarkan username lama
-                        if (!updateRes || updateRes.error || !updateRes.data || updateRes.data.length === 0) {
-                            updateRes = await supabaseClient
-                                .from('admins')
-                                .update({ username: newUsername })
-                                .ilike('username', currentUsername)
-                                .select();
-                        }
-
-                        if (updateRes && updateRes.error) {
-                            console.warn("Gagal UPDATE tabel admins di Supabase:", updateRes.error.message || updateRes.error);
-                            if (updateRes.error.code === '42501' || (updateRes.error.message && updateRes.error.message.includes('row-level security'))) {
-                                showToast('Gagal update database: Kebijakan RLS (Row-Level Security) membatasi UPDATE pada tabel admins. Harap aktifkan policy UPDATE di Supabase.', 'error');
-                            } else {
-                                showToast('Gagal update ke Supabase: ' + (updateRes.error.message || 'Terjadi kesalahan.'), 'error');
-                            }
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalBtnHtml;
-                            return;
-                        }
-
-                        if (updateRes && updateRes.data && updateRes.data.length > 0) {
-                            supabaseUpdated = true;
-                            console.log("Berhasil memperbarui username di tabel admins Supabase:", updateRes.data);
-                        } else {
-                            // Status 200 namun 0 baris terupdate (indikasi pembatasan RLS di Supabase)
-                            console.warn("Query UPDATE Supabase mengembalikan 0 baris yang diperbarui.");
-                            showToast('Database Supabase tidak terupdate (0 baris). Pastikan kebijakan RLS UPDATE pada tabel admins telah diizinkan di Supabase.', 'error');
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalBtnHtml;
-                            return;
-                        }
-                    } catch (dbErr) {
-                        console.warn("Eksepsi saat query update ke Supabase:", dbErr.message || dbErr);
-                        showToast('Terjadi galat koneksi saat memperbarui database Supabase.', 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalBtnHtml;
-                        return;
-                    }
-                }
-
-                // 4. Update data di Local Storage agar cache offline tetap sinkron
-                let adminFound = false;
-                for (let i = 0; i < localAdmins.length; i++) {
-                    if (
-                        (targetAdminId && String(localAdmins[i].id) === String(targetAdminId)) ||
-                        localAdmins[i].username.toLowerCase() === currentUsername.toLowerCase()
-                    ) {
-                        localAdmins[i].username = newUsername;
-                        adminFound = true;
-                        break;
-                    }
-                }
-                if (!adminFound) {
-                    localAdmins.push({ id: targetAdminId || '1', username: newUsername, name: currentUser.name || 'Super Admin' });
-                }
-                localStorage.setItem('local_admins', JSON.stringify(localAdmins));
-
-                // 5. Tampilkan notifikasi sukses
-                showToast(`Username Super Admin berhasil diperbarui menjadi "${newUsername}" di Supabase!`, 'success');
-
-                // 6. Aksi: Bersihkan sesi dan paksa logout otomatis agar admin langsung dapat mencoba login baru
-                setTimeout(() => {
-                    // Bersihkan sesi aktif
-                    localStorage.removeItem('currentUser');
-
-                    // Alihkan ke tampilan login portal
-                    showView('loginView');
-
-                    // Isi otomatis input username dengan username baru agar siap diuji login
-                    const loginUserInput = document.getElementById('usernameInput');
-                    if (loginUserInput) {
-                        loginUserInput.value = newUsername;
-                        loginUserInput.focus();
-                    }
-
-                    showToast(`Sesi telah direset. Silakan klik 'Masuk ke Portal' untuk login dengan username baru: ${newUsername}`, 'info');
-                }, 1000);
-
-            } catch (err) {
-                console.warn("Gagal mengubah username admin:", err.message || err);
-                showToast('Terjadi kesalahan saat memperbarui username.', 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnHtml;
-            }
         }
 
         function openEditWaModal() {
             const currentWa = localStorage.getItem('adminWa') || '6285111029242';
-            const input = document.getElementById('inputEditWaNumber');
-            if (input) input.value = currentWa.replace(/[^0-9]/g, '');
-            const modal = document.getElementById('modalEditWaNumber');
-            if (modal) {
-                modal.style.display = 'flex';
-                lockBodyScroll();
-            }
+            document.getElementById('inputEditWaNumber').value = currentWa.replace(/[^0-9]/g, '');
+            document.getElementById('modalEditWaNumber').style.display = 'flex';
+            lockBodyScroll();
         }
 
         function closeEditWaModal() {
-            const modal = document.getElementById('modalEditWaNumber');
-            if (modal) {
-                modal.style.display = 'none';
-                unlockBodyScroll();
-            }
+            document.getElementById('modalEditWaNumber').style.display = 'none';
+            unlockBodyScroll();
         }
 
         function handleEditWaBackdropClick(e) {
-            if (e.target.id === 'modalEditWaNumber') {
-                closeEditWaModal();
-            }
-        }
-
-        function editWaNumber() {
-            openEditWaModal();
+            if (e.target.id === 'modalEditWaNumber') closeEditWaModal();
         }
 
         async function saveWaNumberModal(e) {
             e.preventDefault();
-            const input = document.getElementById('inputEditWaNumber');
-            if (!input) return;
-            const cleanWa = input.value.replace(/[^0-9]/g, '');
+            const cleanWa = document.getElementById('inputEditWaNumber').value.replace(/[^0-9]/g, '');
             if (cleanWa.length < 8) {
-                showToast('Nomor WhatsApp terlalu pendek (minimal 8 angka).', 'error');
+                showToast('Nomor WhatsApp minimal 8 angka.', 'error');
                 return;
             }
-
-            const btn = document.getElementById('btnSaveWaModal');
-            const origHtml = btn ? btn.innerHTML : '';
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...';
-            }
-
             try {
-                // 1. Simpan di localStorage
                 localStorage.setItem('adminWa', cleanWa);
-
-                // 2. Simpan ke Supabase admin_config jika terhubung
-                if (supabaseClient) {
-                    try {
-                        const { error } = await supabaseClient.from('admin_config').update({ wa_number: cleanWa }).eq('id', 1);
-                        if (error) {
-                            await supabaseClient.from('admin_config').insert([{ id: 1, wa_number: cleanWa }]);
-                        }
-                    } catch (sErr) {
-                        console.warn('Supabase admin_config update notice:', sErr);
-                    }
-                }
-
-                // 3. Simpan ke endpoint backend lokal
-                try {
-                    const token = currentAdminSession?.access_token || '';
-                    await fetch('/api/config/wa', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ wa_number: cleanWa })
-                    });
-                } catch(bErr) {
-                    console.warn('Backend wa config save notice:', bErr);
-                }
-
-                // 4. Update tampilan UI
+                const token = currentAdminSession?.access_token || '';
+                await fetch('/api/config/wa', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ wa_number: cleanWa })
+                });
                 updateAdminWaDisplay(cleanWa);
-
                 closeEditWaModal();
                 showToast('Nomor WhatsApp Admin berhasil diperbarui!', 'success');
             } catch(err) {
-                showToast('Gagal memperbarui nomor: ' + err.message, 'error');
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = origHtml;
-                }
+                showToast('Gagal memperbarui nomor WA.', 'error');
             }
         }
 
@@ -2900,12 +1803,10 @@
             e.preventDefault();
             const id = document.getElementById('f_id').value;
             const submitBtn = document.getElementById('saveBtn');
-
             if (selectedImages.length === 0) {
                 showToast('Harap pilih minimal 1 foto talent dari perangkat!', 'error');
                 return;
             }
-
             const payload = {
                 name: document.getElementById('f_name').value.trim(),
                 location: document.getElementById('f_location').value.trim(),
@@ -2914,67 +1815,36 @@
                 description: document.getElementById('f_desc').value.trim(),
                 images: selectedImages
             };
-
-            const origHtml = submitBtn ? submitBtn.innerHTML : '<i class="fa-solid fa-save mr-2"></i> Simpan Data';
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Menyimpan ke Supabase...';
-            }
-
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Menyimpan...';
             try {
-                if (!supabaseClient) {
-                    throw new Error("Koneksi Supabase belum terhubung.");
+                const res = id
+                    ? await supabaseClient.from('freelancers').update(payload).eq('id', id)
+                    : await supabaseClient.from('freelancers').insert([payload]);
+
+                if (res && res.error) {
+                    throw new Error(res.error.message || 'Gagal menyimpan data talent ke database');
                 }
-
-                if (id) {
-                    const { error } = await supabaseClient
-                        .from('freelancers')
-                        .update(payload)
-                        .eq('id', id);
-
-                    if (error) throw error;
-                    showToast('Data talent berhasil diperbarui di database Supabase!', 'success');
-                } else {
-                    const { error } = await supabaseClient
-                        .from('freelancers')
-                        .insert([payload]);
-
-                    if (error) throw error;
-                    showToast('Data talent baru berhasil disimpan ke database Supabase!', 'success');
-                }
-
+                showToast(id ? 'Data talent berhasil diperbarui di database!' : 'Data talent baru berhasil disimpan ke database!', 'success');
                 resetForm();
                 await renderAdmin();
+                if (typeof renderCatalog === 'function') await renderCatalog();
             } catch (err) {
-                console.warn("Gagal menyimpan ke Supabase:", err.message || err);
-                if (err.code === 'PGRST205' || (err.message && err.message.includes('not find the table'))) {
-                    showToast('Tabel "freelancers" belum dibuat di database Supabase!', 'error');
-                } else {
-                    showToast('Gagal menyimpan ke Supabase: ' + (err.message || 'Terjadi kesalahan.'), 'error');
-                }
+                showToast('Gagal menyimpan talent: ' + err.message, 'error');
             } finally {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = origHtml;
-                }
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-save mr-1.5"></i> Simpan Data';
             }
         }
 
         function editFreelancer(f) {
-            const formTitle = document.getElementById('formTitle');
-            if (formTitle) formTitle.innerText = "Edit Freelancer";
-            const fId = document.getElementById('f_id');
-            if (fId) fId.value = f.id || '';
-            const fName = document.getElementById('f_name');
-            if (fName) fName.value = f.name || '';
-            const fLoc = document.getElementById('f_location');
-            if (fLoc) fLoc.value = f.location || '';
-            const fStatus = document.getElementById('f_status');
-            if (fStatus) fStatus.value = f.status || 'Available';
-            const fService = document.getElementById('f_service');
-            if (fService) fService.value = f.service || '';
-            const fDesc = document.getElementById('f_desc');
-            if (fDesc) fDesc.value = f.description || '';
+            document.getElementById('formTitle').innerText = "Edit Freelancer";
+            document.getElementById('f_id').value = f.id || '';
+            document.getElementById('f_name').value = f.name || '';
+            document.getElementById('f_location').value = f.location || '';
+            document.getElementById('f_status').value = f.status || 'Available';
+            document.getElementById('f_service').value = f.service || '';
+            document.getElementById('f_desc').value = f.description || '';
             
             let imgs = [];
             try {
@@ -2988,533 +1858,147 @@
         }
 
         window.deleteTalent = async (id) => {
-            if (window.event) {
-                try {
-                    window.event.preventDefault();
-                    window.event.stopPropagation();
-                } catch (e) {}
-            }
             if (!id) return;
-
-            const supabase = window.supabaseClient || supabaseClient;
-            if (!supabase) {
-                alert('Gagal hapus di Supabase: Koneksi database Supabase belum tersedia.');
-                return;
-            }
-
+            if (!confirm('Apakah Anda yakin ingin menghapus data talent ini dari database?')) return;
             try {
-                const { error } = await supabase.from('freelancers').delete().eq('id', id);
-                if (error) {
-                    alert('Gagal hapus di Supabase: ' + error.message);
-                    return;
+                const res = await supabaseClient.from('freelancers').delete().eq('id', id);
+                if (res && res.error) {
+                    throw new Error(res.error.message || 'Gagal menghapus data talent');
                 }
-
-                // Sinkronkan cache lokal jika ada
-                try {
-                    let localF = JSON.parse(localStorage.getItem('local_freelancers') || '[]');
-                    localF = localF.filter(item => String(item.id) !== String(id));
-                    localStorage.setItem('local_freelancers', JSON.stringify(localF));
-                } catch (e2) {}
-
-                alert('Data berhasil terhapus dari database Supabase!');
-                
-                // Re-fetch dan re-render data otomatis
+                showToast('Data talent berhasil dihapus.', 'success');
                 await renderAdmin();
-                if (typeof renderCatalog === 'function') {
-                    await renderCatalog();
-                }
+                if (typeof renderCatalog === 'function') await renderCatalog();
             } catch (error) {
-                console.error("Gagal menghapus talent:", error);
-                alert('Gagal hapus di Supabase: ' + (error.message || 'Terjadi kesalahan sistem saat menghapus talent.'));
+                showToast('Gagal menghapus: ' + error.message, 'error');
             }
         };
-        window.deleteFreelancer = window.deleteTalent;
 
         function resetForm() {
-            const fForm = document.getElementById('freelancerForm');
-            if (fForm) fForm.reset();
-            const fId = document.getElementById('f_id');
-            if (fId) fId.value = '';
-            const formTitle = document.getElementById('formTitle');
-            if (formTitle) formTitle.innerText = "Tambah Talent";
+            document.getElementById('freelancerForm').reset();
+            document.getElementById('f_id').value = '';
+            document.getElementById('formTitle').innerText = "Tambah Talent";
             selectedImages = [];
             renderImagePreviews();
         }
 
-        // --- CRUD MEMBER (USERNAME + NAMA MEMBER) ---
         async function saveMember(e) {
             e.preventDefault();
-            const uEl = document.getElementById('m_user');
-            const nEl = document.getElementById('m_name');
-            const u = uEl ? uEl.value.trim() : '';
-            const n = nEl ? nEl.value.trim() : '';
-
+            const u = document.getElementById('m_user').value.trim();
+            const n = document.getElementById('m_name').value.trim();
             if (!u || !n) {
                 showToast('Harap isi username dan nama member.', 'error');
                 return;
             }
-
-            let local = JSON.parse(localStorage.getItem('local_members') || JSON.stringify(defaultMembers));
-            if (local.some(m => m.username.toLowerCase() === u.toLowerCase())) {
-                showToast('Username member sudah terdaftar!', 'error');
-                return;
-            }
-
-            const newMember = {
-                id: 'm_' + Date.now(),
-                username: u,
-                name: n,
-                created_at: new Date().toISOString()
-            };
-
-            if (supabaseClient) {
-                try {
-                    const res = await supabaseClient.from('members').insert([{ username: u, name: n }]);
-                    if (res.error) {
-                        // Fallback jika skema remote belum memiliki kolom name
-                        await supabaseClient.from('members').insert([{ username: u }]);
-                    }
-                } catch (e) {
-                    console.warn('Supabase member insert fallback:', e);
+            try {
+                const res = await supabaseClient.from('members').insert([{ username: u, name: n }]);
+                if (res && res.error) {
+                    throw new Error(res.error.message || 'Gagal menambahkan member ke database');
                 }
+                const localM = JSON.parse(localStorage.getItem('local_members') || '[]');
+                if (!localM.some(m => m.username === u)) {
+                    localM.unshift({ username: u, name: n });
+                    localStorage.setItem('local_members', JSON.stringify(localM));
+                }
+                showToast(`Akun member "${n}" berhasil dibuat dan tersinkronisasi!`, 'success');
+                document.getElementById('memberForm').reset();
+                await renderAdmin();
+            } catch (e) {
+                showToast('Gagal menambahkan member: ' + e.message, 'error');
             }
-
-            local.push(newMember);
-            localStorage.setItem('local_members', JSON.stringify(local));
-
-            showToast(`Akun member "${n}" berhasil dibuat!`, 'success');
-            const mForm = document.getElementById('memberForm');
-            if (mForm) mForm.reset();
-            renderAdmin();
         }
 
         window.deleteMember = async (username) => {
-            if (window.event) {
-                try {
-                    window.event.preventDefault();
-                    window.event.stopPropagation();
-                } catch (e) {}
-            }
             if (!username) return;
-
-            const supabase = window.supabaseClient || supabaseClient;
-            if (!supabase) {
-                alert('Gagal hapus di Supabase: Koneksi database Supabase belum tersedia.');
-                return;
-            }
-
+            if (!confirm(`Apakah Anda yakin ingin menghapus akun member "${username}"?`)) return;
             try {
-                const { error } = await supabase.from('members').delete().eq('username', username);
-                if (error) {
-                    alert('Gagal hapus di Supabase: ' + error.message);
-                    return;
+                const res = await supabaseClient.from('members').delete().eq('username', username);
+                if (res && res.error) {
+                    throw new Error(res.error.message || 'Gagal menghapus member dari database');
                 }
-
-                // Sinkronkan cache lokal
-                try {
-                    let local = JSON.parse(localStorage.getItem('local_members') || '[]');
-                    local = local.filter(m => m.username !== username && m.id !== username);
-                    localStorage.setItem('local_members', JSON.stringify(local));
-                } catch (e2) {}
-
-                alert('Data berhasil terhapus dari database Supabase!');
-                
-                // Re-fetch dan re-render data otomatis
+                const localM = JSON.parse(localStorage.getItem('local_members') || '[]');
+                const filtered = localM.filter(m => m.username !== username);
+                localStorage.setItem('local_members', JSON.stringify(filtered));
+                showToast(`Member "${username}" berhasil dihapus.`, 'success');
                 await renderAdmin();
             } catch (error) {
-                console.error("Gagal menghapus member:", error);
-                alert('Gagal hapus di Supabase: ' + (error.message || 'Terjadi kesalahan sistem saat menghapus member.'));
+                showToast('Gagal menghapus member: ' + error.message, 'error');
             }
         };
 
         window.deleteAdmin = async (id) => {
-            if (window.event) {
-                try {
-                    window.event.preventDefault();
-                    window.event.stopPropagation();
-                } catch (e) {}
-            }
             if (!id) return;
-
-            const supabase = window.supabaseClient || supabaseClient;
-            if (!supabase) {
-                alert('Gagal hapus di Supabase: Koneksi database Supabase belum tersedia.');
-                return;
-            }
-
+            if (!confirm('Apakah Anda yakin ingin menghapus akun admin ini?')) return;
             try {
-                let { error } = await supabase.from('admin_accounts').delete().eq('id', id);
-                if (error && (error.message || '').toLowerCase().includes('relation') && (error.message || '').toLowerCase().includes('does not exist')) {
-                    const alt = await supabase.from('admins').delete().eq('id', id);
-                    error = alt.error;
-                }
-
-                if (error) {
-                    alert('Gagal hapus di Supabase: ' + error.message);
+                const token = currentAdminSession?.access_token || '';
+                const resp = await fetch(`/api/admin/${encodeURIComponent(id)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    showToast(data.message || 'Gagal menghapus admin.', 'error');
                     return;
                 }
-
-                // 2. Hubungkan ke server endpoint API
-                try {
-                    const token = currentAdminSession?.access_token || 'admin-verified-session';
-                    await fetch(`/api/admin/${encodeURIComponent(id)}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                } catch (apiErr) {
-                    console.warn('Notice server delete admin:', apiErr);
-                }
-
-                // 3. Hapus dari penyimpanan lokal
-                let localAdmins = JSON.parse(localStorage.getItem('local_admins') || '[]');
-                localAdmins = localAdmins.filter(a => String(a.id) !== String(id) && String(a.username).toLowerCase() !== String(id).toLowerCase() && String(a.email || '').toLowerCase() !== String(id).toLowerCase());
-                localStorage.setItem('local_admins', JSON.stringify(localAdmins));
-
-                alert('Data berhasil terhapus dari database Supabase!');
-                
-                // Re-fetch dan re-render data otomatis
+                showToast('Admin berhasil dihapus.', 'success');
                 await loadAdminsList();
-                await renderAdmin();
             } catch (error) {
-                console.error('Gagal menghapus admin:', error);
-                alert('Gagal hapus di Supabase: ' + (error.message || 'Terjadi kesalahan sistem saat menghapus administrator.'));
+                showToast('Gagal menghapus admin.', 'error');
             }
         };
-
-        // --- SINKRONISASI DATABASE SUPABASE: WA_LEADS & CRM LIGHT FOLLOW-UP STATUS ---
-        let waLeadsSubscription = null;
-
-        function getStatusBadgeClass(status) {
-            switch (status) {
-                case 'Sedang Dihubungi':
-                    return 'bg-amber-50 text-amber-800 border-amber-300 focus:ring-amber-400';
-                case 'Closing':
-                    return 'bg-emerald-50 text-emerald-800 border-emerald-300 focus:ring-emerald-400';
-                case 'Batal':
-                    return 'bg-rose-50 text-rose-800 border-rose-300 focus:ring-rose-400';
-                case 'Baru':
-                default:
-                    return 'bg-blue-50 text-blue-800 border-blue-300 focus:ring-blue-400';
-            }
-        }
-
-        function saveLocalLeadStatus(id, status) {
-            if (!id) return;
-            try {
-                const statuses = JSON.parse(localStorage.getItem('local_wa_lead_statuses') || '{}');
-                statuses[id] = status;
-                localStorage.setItem('local_wa_lead_statuses', JSON.stringify(statuses));
-            } catch (e) {}
-        }
-
-        function getLeadStatus(lead) {
-            if (lead && lead.status) return lead.status;
-            try {
-                const statuses = JSON.parse(localStorage.getItem('local_wa_lead_statuses') || '{}');
-                return (lead && statuses[lead.id]) || 'Baru';
-            } catch (e) {
-                return 'Baru';
-            }
-        }
-
-        async function updateLeadStatus(id, newStatus, selectEl) {
-            if (!id || !newStatus) return;
-
-            // Perbarui warna badge dropdown seketika untuk responsivitas instan
-            if (selectEl) {
-                selectEl.className = `text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 ${getStatusBadgeClass(newStatus)}`;
-                selectEl.disabled = true;
-            }
-
-            // Simpan ke cache lokal
-            saveLocalLeadStatus(id, newStatus);
-            try {
-                let localLeads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
-                const idx = localLeads.findIndex(item => String(item.id) === String(id));
-                if (idx !== -1) {
-                    localLeads[idx].status = newStatus;
-                    localStorage.setItem('local_wa_leads', JSON.stringify(localLeads));
-                }
-            } catch (e) {}
-
-            let savedToSupabase = false;
-
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('wa_leads')
-                        .update({ status: newStatus })
-                        .eq('id', id);
-
-                    if (error) {
-                        if (error.code === 'PGRST204') {
-                            console.warn("Kolom 'status' belum tersedia di schema cache Supabase wa_leads.", error);
-                            showToast(`Status diubah: "${newStatus}" (Tersimpan lokal. Catatan: Tambahkan kolom status di tabel wa_leads Supabase untuk sinkronisasi cloud).`, 'info');
-                        } else {
-                            console.warn('Error saat update status wa_leads di Supabase:', error.message || error);
-                            showToast('Gagal update ke Supabase: ' + error.message, 'error');
-                        }
-                    } else {
-                        savedToSupabase = true;
-                        showToast(`Status lead berhasil diperbarui menjadi "${newStatus}"!`, 'success');
-                    }
-                } catch (e) {
-                    console.warn('Koneksi Supabase error saat update status:', e.message || e);
-                    showToast(`Status tersimpan offline: "${newStatus}"`, 'info');
-                } finally {
-                    if (selectEl) selectEl.disabled = false;
-                }
-            } else {
-                if (selectEl) selectEl.disabled = false;
-                showToast(`Status lead diperbarui menjadi "${newStatus}".`, 'success');
-            }
-        }
 
         async function loadWaLeads() {
             const leadsBody = document.getElementById('waLeadsTableBody');
             const waCountBadge = document.getElementById('waLeadsCount');
             if (!leadsBody) return;
 
-            // Sembunyikan tabel riwayat wa_leads jika belum ada sesi resmi Supabase Auth
-            if (!currentAdminSession || !currentAdminSession.user) {
-                leadsBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs italic"><i class="fa-solid fa-lock mb-2 block text-lg text-slate-300"></i>Data wa_leads dilindungi. Silakan login Super Admin via Supabase Auth untuk melihat riwayat.</td></tr>';
-                if (waCountBadge) waCountBadge.innerText = '0 riwayat';
-                return;
-            }
-
-            // Tampilkan skeleton / status memuat jika tabel masih kosong
-            if (!leadsBody.children.length) {
-                leadsBody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat riwayat dari database Supabase...</td></tr>';
-            }
-
             let leadsData = [];
-            let isFromSupabase = false;
+            try {
+                const { data, error } = await supabaseClient.from('wa_leads').select('*').order('created_at', { ascending: false });
+                if (!error && Array.isArray(data)) leadsData = data;
+            } catch (e) {}
 
-            // 1. Tarik data live langsung dari tabel wa_leads Supabase
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('wa_leads')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-
-                    if (!error && Array.isArray(data)) {
-                        leadsData = data;
-                        isFromSupabase = true;
-                    } else if (error) {
-                        console.warn('Gagal memuat wa_leads dari Supabase:', error);
-                    }
-                } catch (e) {
-                    console.warn('Koneksi Supabase wa_leads bermasalah:', e);
-                }
-            }
-
-            // Fallback ke penyimpanan lokal jika koneksi Supabase gagal
-            if (!isFromSupabase) {
-                try {
-                    leadsData = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
-                } catch(e) {
-                    leadsData = [];
-                }
-            }
-
-            if (waCountBadge) {
-                waCountBadge.innerText = `${leadsData.length} Permintaan`;
-            }
-
+            if (waCountBadge) waCountBadge.innerText = `${leadsData.length} Permintaan`;
             leadsBody.innerHTML = '';
+
             if (leadsData.length === 0) {
-                leadsBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="py-8 text-center text-slate-400 text-xs italic">
-                            <i class="fa-regular fa-folder-open text-2xl mb-2 block text-slate-300"></i>
-                            Belum ada riwayat klik Hubungi WA Admin di database Supabase.
-                        </td>
-                    </tr>
-                `;
+                leadsBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs italic">Belum ada riwayat klik Hubungi WA Admin.</td></tr>';
                 return;
             }
 
             leadsData.forEach(lead => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors text-xs";
-                
-                let dateStr = '-';
-                if (lead.created_at) {
-                    try {
-                        const d = new Date(lead.created_at);
-                        dateStr = d.toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    } catch(e) {
-                        dateStr = lead.created_at;
-                    }
-                }
-
-                const leadId = lead.id;
-                const leadStatus = getLeadStatus(lead);
-                const safeMemberName = escapeHtml(lead.member_name || '-');
-                const safeTalentName = escapeHtml(lead.talent_name || '-');
-                const safeReference = escapeHtml(lead.reference || '-');
-
+                let dateStr = lead.created_at ? new Date(lead.created_at).toLocaleString('id-ID') : '-';
                 tr.innerHTML = `
-                    <td class="py-3.5 px-4 font-bold text-slate-900">
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-[10px]">
-                                ${(lead.member_name || 'M').charAt(0).toUpperCase()}
-                            </span>
-                            <span>${safeMemberName}</span>
-                        </div>
-                    </td>
-                    <td class="py-3.5 px-4">
-                        <span class="text-blue-600 font-semibold">${safeTalentName}</span>
-                        ${lead.service ? `<span class="block text-[11px] text-slate-400">${escapeHtml(lead.service)}</span>` : ''}
-                    </td>
-                    <td class="py-3.5 px-4 text-slate-600">${safeReference}</td>
-                    <td class="py-3.5 px-4">
-                        <select id="leadStatusSelect_${leadId}" 
-                                onchange="updateLeadStatus('${leadId}', this.value, this)" 
-                                class="text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 ${getStatusBadgeClass(leadStatus)}"
-                                title="Ubah status follow-up lead ini">
-                            <option value="Baru" ${leadStatus === 'Baru' ? 'selected' : ''}>🔵 Baru</option>
-                            <option value="Sedang Dihubungi" ${leadStatus === 'Sedang Dihubungi' ? 'selected' : ''}>🟡 Sedang Dihubungi</option>
-                            <option value="Closing" ${leadStatus === 'Closing' ? 'selected' : ''}>🟢 Closing</option>
-                            <option value="Batal" ${leadStatus === 'Batal' ? 'selected' : ''}>🔴 Batal</option>
-                        </select>
-                    </td>
-                    <td class="py-3.5 px-4 text-right text-slate-400 font-medium whitespace-nowrap">${dateStr}</td>
-                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                        <button type="button" 
-                                onclick="openWaLeadChat('${leadId}')" 
-                                id="btnChatLead_${leadId}"
-                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition-all mr-1" 
-                                title="Klik Hubungi WA Admin untuk Lead ini">
-                            <i class="fa-brands fa-whatsapp text-base"></i>
-                        </button>
-                        <button type="button" 
-                                onclick="window.deleteWALead('${leadId}')" 
-                                id="btnDeleteLead_${leadId}"
-                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-all" 
-                                title="Hapus riwayat ini dari database Supabase">
-                            <i class="fa-regular fa-trash-can text-sm"></i>
+                    <td class="py-3.5 px-4 font-bold text-slate-900">${escapeHtml(lead.member_name || '-')}</td>
+                    <td class="py-3.5 px-4 text-blue-600 font-semibold">${escapeHtml(lead.talent_name || '-')}</td>
+                    <td class="py-3.5 px-4 text-slate-600">${escapeHtml(lead.reference || '-')}</td>
+                    <td class="py-3.5 px-4"><span class="px-2 py-1 rounded bg-blue-50 text-blue-700 font-bold text-[10px]">${escapeHtml(lead.service || 'Terkirim')}</span></td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">${escapeHtml(dateStr)}</td>
+                    <td class="py-3.5 px-4 text-center">
+                        <button type="button" onclick="window.deleteWALead('${lead.id}')" class="text-slate-400 hover:text-red-600 p-1" title="Hapus riwayat">
+                            <i class="fa-regular fa-trash-can"></i>
                         </button>
                     </td>
                 `;
                 leadsBody.appendChild(tr);
             });
-            window.currentLoadedWaLeads = leadsData;
-        }
-
-        function openWaLeadChat(id) {
-            let lead = null;
-            if (window.currentLoadedWaLeads && Array.isArray(window.currentLoadedWaLeads)) {
-                lead = window.currentLoadedWaLeads.find(item => String(item.id) === String(id));
-            }
-            if (!lead) {
-                try {
-                    const local = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
-                    lead = local.find(item => String(item.id) === String(id));
-                } catch(e) {}
-            }
-
-            const wa = localStorage.getItem('adminWa') || '6285111029242';
-            let cleanWa = String(wa).replace(/\D/g, '');
-            if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
-            if (!cleanWa) cleanWa = '6285111029242';
-
-            const mName = lead ? (lead.member_name || 'Member') : 'Member';
-            const tName = lead ? (lead.talent_name || 'Talent') : 'Talent';
-            const srv = lead ? (lead.service || '-') : '-';
-            const ref = lead ? (lead.reference || '-') : '-';
-
-            const msg = `Follow-Up Permintaan Talent PROSS INDO:\n• Member: ${mName}\n• Talent: ${tName}\n• Jasa: ${srv}\n• Referensi: ${ref}`;
-            const chatUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`;
-            
-            showToast('Membuka WhatsApp Admin di tab baru...', 'info');
-            openWhatsAppUrl(chatUrl);
         }
 
         window.deleteWALead = async (id) => {
-            if (window.event) {
-                try {
-                    window.event.preventDefault();
-                    window.event.stopPropagation();
-                } catch (e) {}
-            }
             if (!id) return;
-
-            const supabase = window.supabaseClient || supabaseClient;
-            if (!supabase) {
-                alert('Gagal hapus di Supabase: Koneksi database Supabase belum tersedia.');
-                return;
-            }
-
-            const btn = document.getElementById(`btnDeleteLead_${id}`);
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs text-red-500"></i>';
-            }
-
+            if (!confirm('Apakah Anda yakin ingin menghapus riwayat permintaan WA ini?')) return;
             try {
-                const { error } = await supabase.from('wa_leads').delete().eq('id', id);
-
-                if (error) {
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fa-regular fa-trash-can text-sm"></i>';
-                    }
-                    alert('Gagal hapus di Supabase: ' + error.message);
-                    return;
+                const res = await supabaseClient.from('wa_leads').delete().eq('id', id);
+                if (res && res.error) {
+                    throw new Error(res.error.message || 'Gagal menghapus riwayat');
                 }
-
-                // Bersihkan juga dari penyimpanan lokal
-                try {
-                    let localLeads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
-                    localLeads = localLeads.filter(item => String(item.id) !== String(id));
-                    localStorage.setItem('local_wa_leads', JSON.stringify(localLeads));
-                } catch (e) {}
-
-                try {
-                    const statuses = JSON.parse(localStorage.getItem('local_wa_lead_statuses') || '{}');
-                    delete statuses[id];
-                    localStorage.setItem('local_wa_lead_statuses', JSON.stringify(statuses));
-                } catch(e) {}
-
-                alert('Data berhasil terhapus dari database Supabase!');
-
-                // Langsung perbarui tampilan tabel secara otomatis tanpa perlu refresh halaman
+                showToast('Riwayat berhasil dihapus.', 'success');
                 await loadWaLeads();
             } catch (error) {
-                console.error('Gagal menghapus riwayat WA:', error);
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-regular fa-trash-can text-sm"></i>';
-                }
-                alert('Gagal hapus di Supabase: ' + (error.message || 'Terjadi kesalahan sistem saat menghapus data riwayat.'));
+                showToast('Gagal menghapus riwayat: ' + error.message, 'error');
             }
         };
-        window.deleteWaLead = window.deleteWALead;
-
-        function setupWaLeadsRealtime() {
-            if (!supabaseClient || waLeadsSubscription) return;
-            try {
-                waLeadsSubscription = supabaseClient
-                    .channel('public:wa_leads')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'wa_leads' }, (payload) => {
-                        console.log('Realtime wa_leads update received:', payload);
-                        loadWaLeads();
-                    })
-                    .subscribe();
-            } catch (e) {
-                console.warn('Gagal mengaktifkan realtime Supabase untuk wa_leads:', e);
-            }
-        }
     </script>
 </body>
 </html>

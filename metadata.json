@@ -2,7 +2,5 @@
   "name": "PROSS INDO - Talent Freelance",
   "description": "Direktori eksklusif dan portal talent freelance terkurasi PROSS INDO dengan fitur member dan super admin",
   "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
