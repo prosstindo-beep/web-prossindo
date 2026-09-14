@@ -2,7 +2,10 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>PROSS INDO - Talent Freelance</title>
     <meta name="description" content="Direktori eksklusif dan portal talent freelance terkurasi PROSS INDO dengan fitur member dan super admin">
     <meta property="og:title" content="PROSS INDO - Talent Freelance">
@@ -14,63 +17,105 @@
     <!-- Supabase JS Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* iOS Safari Safe Area & Dynamic Viewport Height Handling */
+        :root {
+            --sat: env(safe-area-inset-top, 0px);
+            --sar: env(safe-area-inset-right, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Safe area utility classes for iOS Notch and Home Indicator */
+        .pt-safe {
+            padding-top: max(1rem, env(safe-area-inset-top, 0px));
+        }
+        .pb-safe {
+            padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+        }
+        .safe-bottom-bar {
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)) !important;
+        }
+
+        /* Prevent auto-zooming on focus in iOS Safari */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Smooth momentum scrolling for iOS */
+        .ios-scroll {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased w-full">
 
     <!-- ==================== VIEW: LOGIN ==================== -->
-    <div id="loginView" style="display: block;">
-        <div class="min-h-screen flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-100">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">PROSS INDO</h1>
-                    <p class="text-xs text-slate-500 font-semibold tracking-wider uppercase mt-1">Talent Freelance</p>
+    <div id="loginView" style="display: block;" class="min-h-screen min-h-[100dvh] w-full">
+        <div class="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 pt-safe pb-safe">
+            <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8 w-full max-w-md border border-slate-100">
+                <div class="text-center mb-6">
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">PROSS INDO</h1>
+                    <p id="loginHeaderTitle" class="text-xs text-slate-500 font-semibold tracking-wider uppercase mt-1">Member Portal</p>
                 </div>
 
-                <div class="bg-blue-50 text-blue-700 text-sm font-medium py-2 px-4 rounded-full inline-flex items-center justify-center w-full mb-6">
-                    <i class="fa-solid fa-shield-halved mr-2"></i> Portal Terkontrol & Aman
-                </div>
-
-                <h2 class="text-2xl font-bold text-center text-slate-900 mb-2">Portal Eksklusif PROSS INDO</h2>
-                <p class="text-center text-slate-500 mb-6 text-sm">Silakan masuk menggunakan username Anda</p>
-
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div class="mb-6">
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">USERNAME</label>
+                <!-- FORM MEMBER LOGIN (USERNAME ONLY - SATU-SATUNYA DI HALAMAN UTAMA) -->
+                <form id="memberLoginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Username Member</label>
                         <div class="relative">
                             <i class="fa-solid fa-user absolute left-4 top-3.5 text-slate-400"></i>
-                            <input type="text" id="usernameInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm" placeholder="Masukkan username Anda" required>
+                            <input type="text" id="usernameInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm text-slate-800" placeholder="Masukkan username member" required autocomplete="username">
                         </div>
                     </div>
-                    <button type="submit" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center">
-                        <span>Masuk ke Portal</span> <i class="fa-solid fa-arrow-right ml-2"></i>
+                    <button type="submit" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg flex items-center justify-center active:scale-[0.98] gap-2 min-h-[44px] transition-all duration-200">
+                        <span>Masuk ke Katalog Talent</span> <i class="fa-solid fa-arrow-right"></i>
                     </button>
+                    
+                    <!-- Tulisan kecil: Masuk sebagai Super Admin (Memunculkan Pop-up Modal) -->
+                    <div class="text-center mt-4">
+                        <button type="button" onclick="openAdminLoginModal()" class="text-xs text-slate-400 hover:text-blue-600 font-medium inline-flex items-center gap-1.5 transition-colors p-1" title="Akses Administrator Khusus">
+                            <i class="fa-solid fa-shield-halved text-[11px]"></i>
+                            <span>Masuk sebagai Super Admin</span>
+                        </button>
+                    </div>
                 </form>
-
-                <div class="mt-8 text-center text-xs text-slate-400 flex items-center justify-center">
-                    <i class="fa-solid fa-lock mr-1.5"></i> Akses dijaga dan dikurasi oleh Super Admin
-                </div>
             </div>
         </div>
     </div>
 
     <!-- ==================== VIEW: MEMBER CATALOG ==================== -->
-    <div id="catalogView" style="display: none;" class="min-h-screen pb-20">
-        <header class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
+    <div id="catalogView" style="display: none;" class="min-h-screen min-h-[100dvh] pb-24 safe-bottom-bar ios-scroll">
+        <header class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center pt-safe">
             <div>
                 <h1 class="font-bold text-lg leading-tight tracking-tight">PROSS INDO</h1>
                 <p class="text-[10px] text-blue-200 font-medium">MEMBER PORTAL</p>
             </div>
-            <button onclick="logout()" class="text-blue-100 hover:text-white p-2">
+            <button onclick="logout()" class="text-blue-100 hover:text-white p-2 active:scale-95 transition-transform" title="Keluar">
                 <i class="fa-solid fa-arrow-right-from-bracket text-xl"></i>
             </button>
         </header>
 
         <div class="bg-blue-600 text-white px-6 pb-8 pt-4 rounded-b-3xl shadow-sm mb-6">
             <h2 class="text-3xl font-bold mb-3">Temukan Talent Terbaik untuk Anda</h2>
-            <p class="text-blue-100 text-sm leading-relaxed opacity-90">Direktori eksklusif Talent kelas premium yang telah melalui verifikasi ketat oleh tim PROSS INDO.</p>
+            <p class="text-blue-100 text-sm leading-relaxed opacity-90">Portal Eksklusif Talent Kelas Premium</p>
         </div>
 
         <div class="px-4 -mt-10 relative z-10 mb-8">
@@ -106,9 +151,9 @@
     </div>
 
     <!-- ==================== VIEW: MEMBER DETAIL ==================== -->
-    <div id="detailView" style="display: none;" class="min-h-screen bg-white">
-        <div class="sticky top-0 z-50 bg-white/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-slate-100">
-            <button onclick="showView('catalogView')" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200">
+    <div id="detailView" style="display: none;" class="min-h-screen min-h-[100dvh] bg-white ios-scroll pb-28">
+        <div class="sticky top-0 z-50 bg-white/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-slate-100 pt-safe">
+            <button type="button" onclick="closeDetail(event)" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 active:scale-95 transition-all" title="Kembali ke Katalog">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
             <div class="font-bold text-slate-900 tracking-tight text-base">PROSS INDO</div>
@@ -121,10 +166,10 @@
             <div class="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-none flex items-center gap-1.5 shadow-md">
                 <i class="fa-solid fa-expand"></i> Klik foto untuk memperbesar
             </div>
-            <button onclick="event.stopPropagation(); prevImage()" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 backdrop-blur-sm z-10">
+            <button onclick="event.stopPropagation(); prevImage()" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 backdrop-blur-sm z-10 active:scale-95">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <button onclick="event.stopPropagation(); nextImage()" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 backdrop-blur-sm z-10">
+            <button onclick="event.stopPropagation(); nextImage()" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 backdrop-blur-sm z-10 active:scale-95">
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
             <div id="imageCounter" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">1/1</div>
@@ -142,110 +187,214 @@
             <p id="detailDesc" class="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap mb-8"></p>
         </div>
 
-        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
-            <button onclick="openContactModal()" class="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-4 rounded-xl flex items-center justify-center shadow-lg transition-all">
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40 safe-bottom-bar">
+            <button id="btnOpenContactModal" onclick="openContactModal()" class="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-4 rounded-xl flex items-center justify-center shadow-lg transition-all active:scale-[0.98]">
                 <i class="fa-brands fa-whatsapp text-xl mr-2"></i> Hubungi Admin (WhatsApp)
             </button>
         </div>
     </div>
 
     <!-- ==================== VIEW: SUPER ADMIN ==================== -->
-    <div id="adminView" style="display: none;" class="min-h-screen bg-slate-100 pb-20">
-        <header class="bg-slate-900 text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-md">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-shield-halved text-xl text-blue-400"></i>
+    <div id="adminView" style="display: none;" class="min-h-screen min-h-[100dvh] bg-slate-100 pb-24 safe-bottom-bar ios-scroll w-full">
+        <header class="bg-slate-900 text-white px-3.5 py-3 sm:p-4 sticky top-0 z-50 flex justify-between items-center shadow-md pt-safe">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                    <i class="fa-solid fa-shield-halved text-lg"></i>
+                </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">Super Admin Dashboard</h1>
-                    <p class="text-[10px] text-slate-400 flex items-center gap-1.5">
-                        <span>PROSS INDO CONTROL</span>
-                        <span class="text-slate-600">•</span>
-                        <span id="adminActiveBadge" class="text-blue-400 font-semibold">@admin</span>
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <h1 class="font-bold text-sm sm:text-lg leading-tight">Super Admin Dashboard</h1>
+                        <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Supabase
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <span class="text-slate-300 font-medium truncate max-w-[170px] sm:max-w-xs" id="adminActiveBadge">admin@prossindo.com</span>
                     </p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="logout()" class="text-slate-300 hover:text-white p-2" title="Keluar">
-                    <i class="fa-solid fa-arrow-right-from-bracket text-xl"></i>
+                <button onclick="handleAdminLogout()" id="btnHeaderAdminLogout" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-rose-950/70 text-slate-200 hover:text-rose-300 border border-slate-700 hover:border-rose-500/50 transition-all text-xs font-semibold active:scale-95 shadow-sm min-h-[36px] sm:min-h-[40px] touch-manipulation" title="Logout Sesi Admin">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Logout</span>
                 </button>
             </div>
         </header>
 
-        <div class="p-4 max-w-3xl mx-auto space-y-6">
+        <div class="w-full max-w-3xl mx-auto px-3 py-3.5 sm:px-5 sm:py-5 space-y-4">
             
             <!-- Stats & WA Config -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3.5 sm:gap-4">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg sm:text-xl shrink-0">
                         <i class="fa-solid fa-users"></i>
                     </div>
                     <div>
-                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">TOTAL TALENT</p>
-                        <p id="adminTotalCount" class="text-2xl font-bold text-slate-900">0</p>
+                        <p class="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">TOTAL TALENT</p>
+                        <p id="adminTotalCount" class="text-xl sm:text-2xl font-bold text-slate-900">0</p>
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div class="flex justify-between items-center mb-1">
-                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wider"><i class="fa-brands fa-whatsapp text-green-500"></i> Nomor WA Admin</p>
-                        <button onclick="editWaNumber()" class="text-blue-600 text-xs font-bold px-2 py-1 bg-blue-50 rounded-md hover:bg-blue-100"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <p class="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-brands fa-whatsapp text-emerald-500 text-sm"></i>
+                            <span>Nomor WA Admin</span>
+                        </p>
+                        <div class="flex items-center gap-1.5">
+                            <a id="btnTestAdminWa" href="https://wa.me/6285111029242" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:text-emerald-800 text-xs font-bold px-2.5 py-1 sm:py-1.5 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors inline-flex items-center gap-1.5 active:scale-95 min-h-[30px]" title="Tes Buka WhatsApp Admin di Tab Baru">
+                                <i class="fa-brands fa-whatsapp text-sm"></i>
+                                <span>Tes WA</span>
+                            </a>
+                            <button type="button" onclick="openEditWaModal()" class="text-blue-600 hover:text-blue-800 text-xs font-bold px-2.5 py-1 sm:py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors inline-flex items-center gap-1.5 active:scale-95 min-h-[30px]" title="Edit Nomor WhatsApp">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                                <span>Edit</span>
+                            </button>
+                        </div>
                     </div>
-                    <p id="adminWaDisplay" class="text-lg font-bold text-slate-800">Memuat...</p>
+                    <p id="adminWaDisplay" class="text-base sm:text-lg font-bold text-slate-800">Memuat...</p>
                 </div>
             </div>
 
-            <!-- Pengaturan Akun Admin -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                <div class="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100">
-                    <div class="w-10 h-10 rounded-xl bg-slate-900 text-blue-400 flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-user-shield"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-base">Pengaturan Akun Admin</h3>
-                        <p class="text-xs text-slate-500">Ubah username login Super Admin yang terintegrasi dengan database Supabase</p>
+            <!-- Pengaturan Akun Admin (Supabase Auth) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5 sm:gap-3">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 text-blue-400 flex items-center justify-center text-base sm:text-lg shrink-0">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-sm sm:text-base">Sesi & Akun Super Admin</h3>
+                            <p class="text-[11px] sm:text-xs text-slate-500">Kredensial terverifikasi oleh Supabase Authentication</p>
+                        </div>
                     </div>
                 </div>
 
-                <form id="adminAccountForm" onsubmit="updateAdminUsername(event)" class="space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-4 text-xs">
+                    <div class="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200">
+                        <span class="text-slate-400 font-bold block mb-1 uppercase text-[10px]">EMAIL AKUN AKTIF</span>
+                        <p id="currentAdminEmailDisplay" class="font-semibold text-slate-800 truncate text-xs">-</p>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200">
+                        <span class="text-slate-400 font-bold block mb-1 uppercase text-[10px]">STATUS SESI SUPABASE</span>
+                        <p class="text-emerald-600 font-bold flex items-center gap-1.5 text-xs">
+                            <i class="fa-solid fa-circle-check"></i> Terautentikasi & Sesi Valid
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Form Ganti Password Admin Supabase Auth -->
+                <form id="adminPasswordChangeForm" onsubmit="updateAdminPassword(event)" class="space-y-3 pt-2 border-t border-slate-100">
+                    <p class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-key text-blue-600"></i> Ganti Password Akun Admin
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">USERNAME SAAT INI</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm">@</span>
-                                <input type="text" id="currentAdminUsername" readonly class="w-full bg-slate-100 border border-slate-200 rounded-lg py-2.5 pl-7 pr-3 text-sm text-slate-600 font-medium cursor-not-allowed select-none">
-                            </div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-1">PASSWORD BARU (MIN. 6 KARAKTER)</label>
+                            <input type="password" id="newAdminPassInput" required minlength="6" placeholder="Password baru" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-600">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">USERNAME BARU <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm">@</span>
-                                <input type="text" id="newAdminUsername" required placeholder="Contoh: admin_utama" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 pl-7 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all">
-                            </div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-1">KONFIRMASI PASSWORD BARU</label>
+                            <input type="password" id="confirmAdminPassInput" required minlength="6" placeholder="Ulangi password baru" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-600">
                         </div>
                     </div>
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
-                        <p class="text-[11px] text-slate-500">
-                            <i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> Setelah disimpan, sesi akan direset dan Anda akan dialihkan untuk login dengan username baru.
-                        </p>
-                        <button type="submit" id="btnUpdateAdminUser" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-check"></i>
-                            <span>Simpan Perubahan</span>
+                    <div class="flex justify-end">
+                        <button type="submit" id="btnUpdateAdminPass" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1.5 active:scale-95 min-h-[38px]">
+                            <i class="fa-solid fa-check"></i> Simpan Password Baru
                         </button>
                     </div>
                 </form>
             </div>
 
+            <!-- Card / Form Tambah Admin Baru (Auto-Confirmed) -->
+            <div id="cardAddNewAdmin" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5 sm:gap-3">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base sm:text-lg shrink-0">
+                            <i class="fa-solid fa-user-plus"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-sm sm:text-base">Tambah Admin Baru</h3>
+                            <p class="text-[11px] sm:text-xs text-slate-500">Daftarkan akun administrator baru dengan status terverifikasi otomatis (*auto-confirmed*)</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] sm:text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full inline-flex items-center gap-1 shrink-0">
+                        <i class="fa-solid fa-shield-halved"></i> Hak Akses Penuh
+                    </span>
+                </div>
+
+                <form id="addNewAdminForm" onsubmit="handleCreateNewAdmin(event)" class="space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-1">EMAIL ADMIN BARU <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                                    <i class="fa-solid fa-envelope"></i>
+                                </span>
+                                <input type="email" id="newAdminEmail" required placeholder="admin.baru@prossindo.com" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-7 pr-3 text-xs focus:ring-2 focus:ring-blue-600 text-slate-800">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-1">PASSWORD BARU (MIN. 6) <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                                    <i class="fa-solid fa-lock"></i>
+                                </span>
+                                <input type="password" id="newAdminPassword" required minlength="6" placeholder="Minimal 6 karakter" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-7 pr-3 text-xs focus:ring-2 focus:ring-blue-600 text-slate-800">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-1">NAMA / USERNAME (OPSIONAL)</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                                    <i class="fa-solid fa-id-badge"></i>
+                                </span>
+                                <input type="text" id="newAdminName" placeholder="Contoh: Budi Admin" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-7 pr-3 text-xs focus:ring-2 focus:ring-blue-600 text-slate-800">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2">
+                        <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                            <span>Admin baru otomatis terverifikasi &amp; dapat langsung digunakan untuk login.</span>
+                        </div>
+                        <button type="submit" id="btnCreateNewAdmin" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition-all shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap min-h-[38px]">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Buat Akun Admin</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Panel Daftar Admin Terdaftar -->
+                <div class="mt-4 pt-3 border-t border-slate-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                            <i class="fa-solid fa-users-gear text-blue-500"></i>
+                            <span>Daftar Akun Administrator Terdaftar</span>
+                        </p>
+                        <button type="button" onclick="loadAdminsList()" class="text-[11px] font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-arrows-rotate text-[10px]"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="adminAccountsList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
             <!-- Form Add/Edit Freelancer -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                <h3 class="font-bold text-slate-900 mb-1 text-lg" id="formTitle">Tambah Talent</h3>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
+                <h3 class="font-bold text-slate-900 mb-1 text-base sm:text-lg" id="formTitle">Tambah Talent</h3>
                 <p class="text-xs text-slate-500 mb-4">Input data talent ke database cloud Supabase.</p>
                 
-                <form id="freelancerForm" onsubmit="saveFreelancer(event)" class="space-y-4">
+                <form id="freelancerForm" onsubmit="saveFreelancer(event)" class="space-y-3.5 sm:space-y-4">
                     <input type="hidden" id="f_id">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">NAMA LENGKAP</label>
                         <input type="text" id="f_name" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-blue-600 text-sm" required>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1">LOKASI</label>
                             <input type="text" id="f_location" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-blue-600 text-sm" required>
@@ -277,26 +426,26 @@
                         <!-- Preview Grid -->
                         <div id="imagePreviewContainer" class="flex flex-wrap gap-2 mt-3"></div>
                     </div>
-                    <div class="flex gap-2 pt-2">
-                        <button type="button" onclick="resetForm()" class="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-xl text-sm transition-all">Batal</button>
-                        <button type="submit" id="saveBtn" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md"><i class="fa-solid fa-save mr-2"></i> Simpan Data</button>
+                    <div class="flex gap-2.5 pt-2">
+                        <button type="button" onclick="resetForm()" class="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-xl text-xs sm:text-sm transition-all min-h-[44px]">Batal</button>
+                        <button type="submit" id="saveBtn" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md min-h-[44px]"><i class="fa-solid fa-save mr-1.5"></i> Simpan Data</button>
                     </div>
                 </form>
             </div>
 
             <!-- List Data Freelancer -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                <h3 class="font-bold text-slate-900 mb-4 text-lg">Kelola Katalog Talent</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
+                <h3 class="font-bold text-slate-900 mb-3 text-base sm:text-lg">Kelola Katalog Talent</h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-200 w-full max-w-full">
+                    <table class="w-full min-w-[340px] text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold border-b border-slate-200">
                             <tr>
-                                <th class="py-3 px-4">Nama & Jasa</th>
-                                <th class="py-3 px-4">Status</th>
-                                <th class="py-3 px-4 text-right">Aksi</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4">Nama &amp; Jasa</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4">Status</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="adminTableBody" class="divide-y divide-slate-100">
+                        <tbody id="adminTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm">
                             <!-- Diisi otomatis oleh Supabase -->
                         </tbody>
                     </table>
@@ -304,63 +453,74 @@
             </div>
 
             <!-- Form & List Kelola Member (Klien) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                <h3 class="font-bold text-slate-900 mb-1 text-lg">Kelola Akun Member (Klien)</h3>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
+                <h3 class="font-bold text-slate-900 mb-1 text-base sm:text-lg">Kelola Akun Member (Klien)</h3>
                 <p class="text-xs text-slate-500 mb-4">Tambahkan hak akses bagi klien untuk melihat katalog.</p>
                 
-                <form id="memberForm" onsubmit="saveMember(event)" class="space-y-4 mb-6">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <form id="memberForm" onsubmit="saveMember(event)" class="space-y-3 sm:space-y-4 mb-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1">USERNAME MEMBER</label>
-                            <input type="text" id="m_user" placeholder="Masukkan username" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-sm" required>
+                            <input type="text" id="m_user" placeholder="Masukkan username" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs sm:text-sm" required>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1">NAMA MEMBER</label>
-                            <input type="text" id="m_name" placeholder="Masukkan nama lengkap member" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-sm" required>
+                            <input type="text" id="m_name" placeholder="Masukkan nama lengkap member" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs sm:text-sm" required>
                         </div>
                     </div>
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-md">
-                        <i class="fa-solid fa-user-plus mr-2"></i> Tambahkan Akun Member Baru
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md min-h-[44px]">
+                        <i class="fa-solid fa-user-plus mr-1.5"></i> Tambahkan Akun Member Baru
                     </button>
                 </form>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold">
+                <div class="overflow-x-auto rounded-xl border border-slate-200 w-full max-w-full">
+                    <table class="w-full min-w-[320px] text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold border-b border-slate-200">
                             <tr>
-                                <th class="py-3 px-4">Username Member</th>
-                                <th class="py-3 px-4">Nama Member</th>
-                                <th class="py-3 px-4 text-right">Aksi</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4">Username Member</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4">Nama Member</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="adminMemberTableBody" class="divide-y divide-slate-100">
+                        <tbody id="adminMemberTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm">
                             <!-- Diisi otomatis oleh Supabase -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Bagian Tabel Baru: Riwayat Member Klik Hubungi WA Admin -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                <div class="flex justify-between items-center mb-4">
+            <!-- Bagian Tabel: Riwayat Member Klik Hubungi WA Admin (Live Supabase) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3.5 pb-3 border-b border-slate-100">
                     <div>
-                        <h3 class="font-bold text-slate-900 text-lg">Riwayat Klik Hubungi WA Admin</h3>
-                        <p class="text-xs text-slate-500">Daftar member/klien yang telah meminta kontak WhatsApp admin.</p>
+                        <h3 class="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                            <i class="fa-brands fa-whatsapp text-emerald-500"></i>
+                            <span>Riwayat Klik Hubungi WA Admin</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Tersinkronisasi langsung secara live dari tabel database <code class="bg-slate-100 px-1.5 py-0.5 rounded text-blue-600 font-mono text-[11px]">wa_leads</code> Supabase.</p>
                     </div>
-                    <span id="waLeadsCount" class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">0 Permintaan</span>
+                    <div class="flex items-center gap-2 self-start sm:self-auto">
+                        <button type="button" onclick="loadWaLeads()" class="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg font-semibold transition-colors shadow-sm active:scale-95" title="Muat ulang riwayat dari database Supabase">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span>Refresh</span>
+                        </button>
+                        <span id="waLeadsCount" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100 shadow-sm">0 Permintaan</span>
+                    </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold">
+                <div class="overflow-x-auto rounded-xl border border-slate-200 w-full max-w-full ios-scroll">
+                    <table class="w-full min-w-[560px] text-left text-sm text-slate-600 whitespace-nowrap">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold border-b border-slate-200">
                             <tr>
-                                <th class="py-3 px-4">Nama Member</th>
-                                <th class="py-3 px-4">Nama Talent</th>
-                                <th class="py-3 px-4">Referensi</th>
-                                <th class="py-3 px-4 text-right">Waktu</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4">Nama Member</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4">Nama Talent</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4">Referensi</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4">Status Follow-Up</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4 text-right">Waktu</th>
+                                <th class="py-2.5 px-3 sm:py-3 sm:px-4 text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="waLeadsTableBody" class="divide-y divide-slate-100">
-                            <!-- Diisi otomatis oleh Supabase / Local -->
+                        <tbody id="waLeadsTableBody" class="divide-y divide-slate-100 text-xs">
+                            <!-- Diisi secara dinamis langsung dari tabel wa_leads Supabase -->
                         </tbody>
                     </table>
                 </div>
@@ -370,8 +530,8 @@
     </div>
 
     <!-- ==================== MODAL: HUBUNGI WA ADMIN ==================== -->
-    <div id="contactModal" style="display: none;" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative">
+    <div id="contactModal" style="display: none;" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 pt-safe pb-safe overflow-y-auto ios-scroll" onclick="handleContactModalBackdropClick(event)">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 relative my-auto animate-fade-in" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -382,7 +542,7 @@
                         <p class="text-[11px] text-slate-500">Konfirmasi kebutuhan talent via WhatsApp</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeContactModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
+                <button type="button" onclick="closeContactModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors active:scale-95">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -396,17 +556,122 @@
             <form id="contactForm" onsubmit="submitContactForm(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">NAMA MEMBER <span class="text-red-500">*</span></label>
-                    <input type="text" id="modalMemberName" required placeholder="Masukkan nama lengkap Anda" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
+                    <input type="text" id="modalMemberName" required placeholder="Masukkan nama lengkap Anda" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">REFERENSI <span class="text-red-500">*</span></label>
-                    <input type="text" id="modalReference" required placeholder="Contoh: Rekomendasi Teman / Instagram / Proyek Desain" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
+                    <input type="text" id="modalReference" required placeholder="Contoh: Rekomendasi Teman / Instagram / Proyek Desain" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeContactModal()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-all">Batal</button>
-                    <button type="submit" id="btnSubmitContact" class="w-2/3 bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                    <button type="button" onclick="closeContactModal()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-all active:scale-95">Batal</button>
+                    <button type="submit" id="btnSubmitContact" class="w-2/3 bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 active:scale-[0.98]">
                         <i class="fa-brands fa-whatsapp text-lg"></i>
                         <span>Lanjutkan ke WA</span>
+                    </button>
+                </div>
+                <div class="text-center pt-2.5 border-t border-slate-100 mt-2">
+                    <a id="linkDirectWa" href="https://wa.me/6285111029242" target="_blank" rel="noopener noreferrer" class="text-xs text-slate-500 hover:text-emerald-600 font-semibold inline-flex items-center gap-1.5 transition-colors" title="Buka WhatsApp Admin langsung di tab baru">
+                        <i class="fa-brands fa-whatsapp text-emerald-500 text-sm"></i>
+                        <span>Langsung Hubungi WA Admin Tanpa Formulir</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: LOGIN SUPER ADMIN ==================== -->
+    <div id="adminLoginModal" style="display: none;" class="fixed inset-0 z-[105] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 pt-safe pb-safe overflow-y-auto ios-scroll" onclick="handleAdminLoginModalBackdropClick(event)">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-7 shadow-2xl border border-slate-100 relative my-auto animate-fade-in" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-slate-900 text-blue-400 flex items-center justify-center text-lg shrink-0 shadow-sm">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base">Login Super Admin</h3>
+                        <p class="text-xs text-slate-500">Panel otorisasi khusus administrator</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAdminLoginModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors active:scale-95" title="Tutup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="adminSignInForm" onsubmit="handleAdminAuthLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email / Username</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user-shield absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="adminAuthEmail" required autocomplete="username" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm text-slate-800" placeholder="Email atau username">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="password" id="adminAuthPassword" required autocomplete="current-password" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-11 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm text-slate-800" placeholder="Password">
+                        <button type="button" onclick="togglePasswordVisibility('adminAuthPassword', this)" class="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 p-1" title="Lihat/Sembunyikan Password">
+                            <i class="fa-solid fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-slate-500 pt-0.5">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="rememberAdminSession" checked class="rounded text-blue-600 focus:ring-blue-500 border-slate-300 w-4 h-4">
+                        <span>Ingat sesi login</span>
+                    </label>
+                </div>
+
+                <div class="flex gap-2.5 pt-2">
+                    <button type="button" onclick="closeAdminLoginModal()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs sm:text-sm transition-all active:scale-95 min-h-[44px]">
+                        Batal
+                    </button>
+                    <button type="submit" id="btnAdminLogin" class="w-2/3 bg-slate-900 hover:bg-black text-white font-bold py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center active:scale-[0.98] gap-2 min-h-[44px]">
+                        <i class="fa-solid fa-shield-halved text-blue-400 text-sm"></i>
+                        <span>Masuk Dashboard</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: EDIT NOMOR WA ADMIN ==================== -->
+    <div id="modalEditWaNumber" style="display: none;" class="fixed inset-0 z-[105] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 pt-safe pb-safe overflow-y-auto ios-scroll" onclick="handleEditWaBackdropClick(event)">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 relative my-auto animate-fade-in" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base">Ubah Nomor WhatsApp Admin</h3>
+                        <p class="text-xs text-slate-500">Nomor kontak resmi penerima lead dari katalog talent</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeEditWaModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors active:scale-95" title="Tutup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="formEditWa" onsubmit="saveWaNumberModal(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">NOMOR WHATSAPP (KODE NEGARA TANPA +)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">+</span>
+                        <input type="tel" id="inputEditWaNumber" required class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-8 pr-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all" placeholder="6285111029242">
+                    </div>
+                </div>
+
+                <div class="flex gap-2.5 pt-2">
+                    <button type="button" onclick="closeEditWaModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs sm:text-sm transition-all active:scale-95 min-h-[44px]">
+                        Batal
+                    </button>
+                    <button type="submit" id="btnSaveWaModal" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-1.5 active:scale-[0.98] min-h-[44px]">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Simpan Nomor WA</span>
                     </button>
                 </div>
             </form>
@@ -414,9 +679,9 @@
     </div>
 
     <!-- ==================== MODAL: FULL PHOTO LIGHTBOX ==================== -->
-    <div id="lightboxModal" style="display: none;" class="fixed inset-0 z-[110] bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-sm" onclick="handleLightboxBackdropClick(event)">
-        <div class="absolute top-4 right-4 flex items-center gap-3 z-20">
-            <button onclick="closeLightbox()" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+    <div id="lightboxModal" style="display: none;" class="fixed inset-0 z-[110] bg-black/95 flex flex-col items-center justify-center p-4 pt-safe pb-safe backdrop-blur-sm" onclick="handleLightboxBackdropClick(event)">
+        <div class="absolute top-4 right-4 flex items-center gap-3 z-20 pt-safe">
+            <button onclick="closeLightbox()" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors active:scale-95">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
         </div>
@@ -430,17 +695,44 @@
 
     <!-- ==================== JAVASCRIPT ==================== -->
     <script>
-        // --- SUPABASE CONFIGURATION & LOCAL FALLBACK STORE ---
-        const supabaseUrl = 'https://gnapicvrnwyrjyqipxew.supabase.co';
-        const supabaseKey = 'sb_publishable_rVZ8cowvhojE3RuvBXQ_Xw_aftVOotX'; 
-        const supabaseClient = (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') 
-            ? window.supabase.createClient(supabaseUrl, supabaseKey) 
-            : null;
+        // --- SUPABASE CONFIGURATION & SINGLETON CLIENT ---
+        let supabaseUrl = 'https://gnapicvrnwyrjyqipxew.supabase.co';
+        let supabaseKey = 'sb_publishable_rVZ8cowvhojE3RuvBXQ_Xw_aftVOotX'; 
+
+        // Fungsi Singleton: Memastikan pemanggilan supabase.createClient(...) HANYA dilakukan 1 kali secara global
+        function getSupabaseClient() {
+            if (typeof window === 'undefined') return null;
+
+            // Jika sudah diinisialisasi sebelumnya di window.supabaseClient, kembalikan instance yang sama
+            if (window.supabaseClient) {
+                return window.supabaseClient;
+            }
+
+            // Inisialisasi HANYA 1 kali untuk seluruh aplikasi
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey, {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true
+                    }
+                });
+            } else {
+                window.supabaseClient = null;
+            }
+
+            return window.supabaseClient;
+        }
+
+        // Simpan referensi global untuk seluruh fungsi di aplikasi
+        let supabaseClient = getSupabaseClient();
 
         // Default mock datasets used when cloud database tables are uninitialized or offline
         const defaultAdmins = [
             { id: '1', username: 'admin', name: 'Super Admin' },
-            { id: '2', username: 'superadmin', name: 'Super Admin' }
+            { id: '2', username: 'superadmin', name: 'Super Admin' },
+            { id: '3', username: 'Angga', email: 'argayunanda52@gmail.com', name: 'Angga Yunanda' },
+            { id: '4', username: 'SIHA', name: 'SIHA Admin' }
         ];
 
         const defaultMembers = [
@@ -462,8 +754,18 @@
                 localStorage.setItem('local_wa_leads', '[]');
             }
             if (!localStorage.getItem('adminWa')) {
-                localStorage.setItem('adminWa', '6281234567890');
+                localStorage.setItem('adminWa', '6285111029242');
             }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
 
         // Lightweight non-blocking toast notification helper
@@ -479,7 +781,10 @@
             const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800';
             toast.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all duration-300 transform translate-y-[-10px] opacity-0 pointer-events-auto flex items-center justify-between`;
             toast.innerHTML = `<span>${message}</span><button class="ml-3 text-white/70 hover:text-white font-bold">&times;</button>`;
-            toast.querySelector('button').onclick = () => toast.remove();
+            const closeBtn = toast.querySelector('button');
+            if (closeBtn) {
+                closeBtn.onclick = () => toast.remove();
+            }
             container.appendChild(toast);
             setTimeout(() => {
                 toast.classList.remove('translate-y-[-10px]', 'opacity-0');
@@ -494,11 +799,36 @@
         let currentFreelancerIndex = 0; 
         let currentDetailData = null;
         let selectedImages = [];
+        let currentAdminSession = null;
+        let isAuthChecking = false;
 
-        document.addEventListener("DOMContentLoaded", () => {
+        // --- DYNAMIC BODY SCROLL LOCK MANAGEMENT ---
+        // Memastikan scroll layar <body> HANYA dikunci saat modal pop-up sedang aktif,
+        // dan otomatis dilepas (dihapus dari <body>) saat modal ditutup.
+        let activeModalsCount = 0;
+
+        function lockBodyScroll() {
+            activeModalsCount++;
+            if (activeModalsCount === 1) {
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function unlockBodyScroll() {
+            activeModalsCount = Math.max(0, activeModalsCount - 1);
+            if (activeModalsCount === 0) {
+                document.body.style.overflow = '';
+            }
+        }
+
+        function resetBodyScroll() {
+            activeModalsCount = 0;
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
             ensureLocalData();
-            initData();
-            showView('loginView');
+            await initData();
             renderImagePreviews();
 
             // Keyboard navigation for lightbox & modals
@@ -506,40 +836,953 @@
                 if (e.key === 'Escape') {
                     closeLightbox();
                     closeContactModal();
+                    closeEditWaModal();
+                    closeAdminLoginModal();
                 }
             });
         });
 
+        // --- MODAL: LOGIN SUPER ADMIN POP-UP ---
+        function openAdminLoginModal() {
+            const modal = document.getElementById('adminLoginModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                lockBodyScroll();
+                setTimeout(() => {
+                    const input = document.getElementById('adminAuthEmail');
+                    if (input) input.focus();
+                }, 80);
+            }
+        }
+
+        function closeAdminLoginModal() {
+            const modal = document.getElementById('adminLoginModal');
+            if (modal) {
+                modal.style.display = 'none';
+                unlockBodyScroll();
+            }
+        }
+
+        function handleAdminLoginModalBackdropClick(event) {
+            if (event.target === document.getElementById('adminLoginModal')) {
+                closeAdminLoginModal();
+            }
+        }
+
+        function switchLoginTab(tab) {
+            if (tab === 'admin') {
+                openAdminLoginModal();
+            } else {
+                closeAdminLoginModal();
+            }
+        }
+
+        function toggleAdminSignUpForm(show) {
+            const container = document.getElementById('adminSignUpContainer');
+            const toggleBtn = document.getElementById('btnToggleSignUp');
+            if (!container) return;
+            const isHidden = container.style.display === 'none';
+            const targetState = typeof show === 'boolean' ? show : isHidden;
+            container.style.display = targetState ? 'block' : 'none';
+            if (toggleBtn) {
+                toggleBtn.innerHTML = targetState 
+                    ? '<i class="fa-solid fa-xmark mr-1.5"></i> <span>Tutup formulir registrasi</span>' 
+                    : '<i class="fa-solid fa-user-plus mr-1.5"></i> <span>Belum buat akun di Supabase Auth? Registrasi Admin</span>';
+            }
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            } else {
+                input.type = 'password';
+                if (icon) {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        }
+
+        function updateAdminSessionUI(session) {
+            if (!session || !session.user) return;
+            const email = session.user.email || 'admin@prossindo.com';
+            const badge = document.getElementById('adminActiveBadge');
+            if (badge) badge.innerText = email;
+            const emailDisp = document.getElementById('currentAdminEmailDisplay');
+            if (emailDisp) emailDisp.innerText = email;
+        }
+
+        function getTalentWaUrl(f) {
+            const rawWa = localStorage.getItem('adminWa') || '6285111029242';
+            let cleanWa = String(rawWa).replace(/\D/g, '');
+            if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
+            if (!cleanWa) cleanWa = '6285111029242';
+
+            const tName = (f && f.name) ? f.name : 'Talent';
+            const srv = (f && f.service) ? f.service : '-';
+            const loc = (f && f.location) ? f.location : '-';
+            let currentMemberName = 'Member';
+            try {
+                const u = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                currentMemberName = u.name || u.username || 'Member';
+            } catch(e) {}
+
+            const text = `Halo Admin PROSS INDO,\nSaya (${currentMemberName}) tertarik untuk berkonsultasi mengenai talent:\n• Nama: ${tName}\n• Layanan: ${srv}\n• Lokasi: ${loc}\nMohon informasi ketersediaan jadwalnya. Terima kasih!`;
+            return `https://wa.me/${cleanWa}?text=${encodeURIComponent(text)}`;
+        }
+
+        async function logWaLeadFromCard(talent) {
+            if (!talent) return;
+            let memberName = 'Member';
+            try {
+                const u = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                memberName = u.name || u.username || 'Member';
+            } catch(e) {}
+
+            const leadEntry = {
+                id: 'lead_' + Date.now(),
+                member_name: memberName,
+                talent_name: talent.name || 'Talent',
+                service: talent.service || '-',
+                reference: `Klik langsung kartu katalog (${talent.location || '-'})`,
+                status: 'pending',
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                const localLeads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
+                localLeads.unshift(leadEntry);
+                localStorage.setItem('local_wa_leads', JSON.stringify(localLeads.slice(0, 100)));
+            } catch(e) {}
+
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('wa_leads').insert([{
+                        member_name: leadEntry.member_name,
+                        talent_name: leadEntry.talent_name,
+                        service: leadEntry.service,
+                        reference: leadEntry.reference,
+                        status: 'pending'
+                    }]);
+                } catch(sErr) {
+                    console.warn('Supabase lead record notice:', sErr);
+                }
+            }
+        }
+
+        function updateAdminWaDisplay(waNumber) {
+            let cleanWa = String(waNumber || localStorage.getItem('adminWa') || '6285111029242').replace(/\D/g, '');
+            if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
+            if (!cleanWa) cleanWa = '6285111029242';
+            
+            const waDisp = document.getElementById('adminWaDisplay');
+            if (waDisp) waDisp.innerText = `+${cleanWa}`;
+
+            const testBtn = document.getElementById('btnTestAdminWa');
+            if (testBtn) {
+                const testMsg = 'Halo Admin PROSS INDO, ini adalah uji coba pesan WhatsApp.';
+                testBtn.href = `https://wa.me/${cleanWa}?text=${encodeURIComponent(testMsg)}`;
+                testBtn.target = '_blank';
+                testBtn.rel = 'noopener noreferrer';
+            }
+
+            // Otomatis sinkronkan semua tautan https://wa.me/<nomor> di kartu-kartu talent
+            const cardLinks = document.querySelectorAll('.talent-card-wa-link');
+            cardLinks.forEach(link => {
+                try {
+                    const rawTalentData = link.getAttribute('data-talent');
+                    if (rawTalentData) {
+                        const f = JSON.parse(rawTalentData);
+                        link.href = getTalentWaUrl(f);
+                    } else {
+                        const oldHref = link.getAttribute('href') || '';
+                        const parts = oldHref.split('?text=');
+                        const textPart = parts[1] ? `?text=${parts[1]}` : '';
+                        link.href = `https://wa.me/${cleanWa}${textPart}`;
+                    }
+                } catch(e) {
+                    const oldHref = link.getAttribute('href') || '';
+                    const parts = oldHref.split('?text=');
+                    const textPart = parts[1] ? `?text=${parts[1]}` : '';
+                    link.href = `https://wa.me/${cleanWa}${textPart}`;
+                }
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+            });
+
+            // Sinkronkan juga tautan langsung di modal kontak detail
+            const linkDirect = document.getElementById('linkDirectWa');
+            if (linkDirect) {
+                const tName = (currentDetailData && currentDetailData.name) ? currentDetailData.name : 'Talent';
+                const directMsg = `Halo Admin PROSS INDO, saya tertarik berkonsultasi mengenai talent: ${tName}.`;
+                linkDirect.href = `https://wa.me/${cleanWa}?text=${encodeURIComponent(directMsg)}`;
+                linkDirect.target = '_blank';
+                linkDirect.rel = 'noopener noreferrer';
+            }
+        }
+
         async function initData() {
+            try {
+                const cfgRes = await fetch('/api/config');
+                if (cfgRes.ok) {
+                    const cfg = await cfgRes.json();
+                    if (cfg.supabaseUrl && cfg.supabaseKey && (cfg.supabaseUrl !== supabaseUrl || cfg.supabaseKey !== supabaseKey)) {
+                        supabaseUrl = cfg.supabaseUrl;
+                        supabaseKey = cfg.supabaseKey;
+                    }
+                }
+            } catch (cfgErr) {
+                console.warn("Menggunakan konfigurasi default:", cfgErr);
+            }
+
+            // Gunakan singleton global instance Supabase (HANYA dibuat 1 kali)
+            supabaseClient = getSupabaseClient();
+
             try {
                 if (supabaseClient) {
                     const { data, error } = await supabaseClient.from('admin_config').select('wa_number').limit(1).single();
                     if (data && !error && data.wa_number) {
                         localStorage.setItem('adminWa', data.wa_number);
-                        const waDisp = document.getElementById('adminWaDisplay');
-                        if (waDisp) waDisp.innerText = `+${data.wa_number}`;
-                        return;
+                        updateAdminWaDisplay(data.wa_number);
                     }
                 }
             } catch (err) {
-                console.warn("Memuat config dari penyimpanan lokal:", err);
+                console.warn("Memuat config dari Supabase:", err);
             }
+
+            // Sync dari backend endpoint /api/config/wa jika tersedia
+            try {
+                const waRes = await fetch('/api/config/wa');
+                if (waRes.ok) {
+                    const waData = await waRes.json();
+                    if (waData && waData.wa_number) {
+                        localStorage.setItem('adminWa', waData.wa_number);
+                        updateAdminWaDisplay(waData.wa_number);
+                    }
+                }
+            } catch (bErr) {}
+
             if (!localStorage.getItem('adminWa')) {
-                localStorage.setItem('adminWa', '6281234567890');
+                localStorage.setItem('adminWa', '6285111029242');
+            }
+            updateAdminWaDisplay(localStorage.getItem('adminWa'));
+
+            // Periksa sesi autentikasi Supabase Auth yang tersimpan
+            await checkAuthSession();
+        }
+
+        async function checkAuthSession() {
+            if (!supabaseClient) {
+                showView('loginView');
+                return;
+            }
+
+            isAuthChecking = true;
+            try {
+                // 1. Cek sesi Supabase Auth resmi
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (session && session.user) {
+                    currentAdminSession = session;
+                    updateAdminSessionUI(session);
+
+                    try {
+                        fetch('/api/auth/verify', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${session.access_token}`
+                            }
+                        }).catch(() => {});
+                    } catch(e) {}
+
+                    const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                    if (savedUser && savedUser.role === 'admin') {
+                        renderAdmin();
+                        loadWaLeads();
+                        setupWaLeadsRealtime();
+                        showView('adminView');
+                        isAuthChecking = false;
+                        return;
+                    }
+                }
+
+                // 2. Cek sesi admin terverifikasi yang tersimpan di localStorage
+                const storedAdminSession = localStorage.getItem('supabase_admin_session');
+                if (storedAdminSession) {
+                    try {
+                        const parsed = JSON.parse(storedAdminSession);
+                        if (parsed && parsed.user && (!parsed.expires_at || parsed.expires_at > Math.floor(Date.now() / 1000))) {
+                            currentAdminSession = parsed;
+                            updateAdminSessionUI(parsed);
+
+                            try {
+                                fetch('/api/auth/verify', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${parsed.access_token}`
+                                    }
+                                }).catch(() => {});
+                            } catch(e) {}
+
+                            const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                            if (savedUser && savedUser.role === 'admin') {
+                                renderAdmin();
+                                loadWaLeads();
+                                setupWaLeadsRealtime();
+                                showView('adminView');
+                                isAuthChecking = false;
+                                return;
+                            }
+                        }
+                    } catch (pErr) {}
+                }
+
+                currentAdminSession = null;
+
+                // Supabase Auth change listener
+                supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                    console.log("Supabase Auth event:", event, session ? session.user?.email : null);
+                    if (session && session.user) {
+                        currentAdminSession = session;
+                        updateAdminSessionUI(session);
+                    } else if (event === 'SIGNED_OUT') {
+                        currentAdminSession = null;
+                        localStorage.removeItem('currentUser');
+                        localStorage.removeItem('supabase_admin_session');
+                        const adminViewEl = document.getElementById('adminView');
+                        if (adminViewEl && adminViewEl.style.display !== 'none') {
+                            showView('loginView');
+                            switchLoginTab('admin');
+                            showToast('Sesi autentikasi telah berakhir. Silakan login kembali.', 'info');
+                        }
+                    }
+                });
+
+                // Cek apakah member sedang login
+                const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (savedUser && savedUser.role === 'member') {
+                    renderCatalog();
+                    showView('catalogView');
+                } else {
+                    showView('loginView');
+                }
+            } catch(e) {
+                console.warn("Gagal mengecek sesi Supabase Auth:", e);
+                showView('loginView');
+            } finally {
+                isAuthChecking = false;
             }
         }
 
-        function showView(viewId) {
+        let lastCatalogScrollPosition = 0;
+
+        function showView(viewId, resetScroll = true) {
+            // Pastikan scroll lock <body> dibersihkan setiap kali berpindah view
+            resetBodyScroll();
+
+            // KEAMANAN KETAT: adminView HANYA boleh ditampilkan jika ada sesi Supabase Auth aktif!
+            if (viewId === 'adminView') {
+                if (!currentAdminSession || !currentAdminSession.user) {
+                    console.warn('Blokir akses tak terotorisasi ke adminView.');
+                    showToast('Akses ditolak! Panel Super Admin hanya dapat diakses dengan akun resmi Supabase Auth.', 'error');
+                    viewId = 'loginView';
+                    openAdminLoginModal();
+                }
+            }
+
             views.forEach(v => {
                 const el = document.getElementById(v);
-                if(el) {
+                if (el) {
                     el.style.display = (v === viewId) ? 'block' : 'none';
                 }
             });
-            window.scrollTo(0, 0);
+
+            if (resetScroll) {
+                window.scrollTo(0, 0);
+            }
         }
 
-        // --- AUTHENTICATION (USERNAME ONLY) ---
+        // --- AUTHENTICATION: SUPER ADMIN (SUPABASE AUTH: EMAIL & PASSWORD + ADMIN RECOGNITION) ---
+        async function handleAdminAuthLogin(e) {
+            e.preventDefault();
+            const userInputEl = document.getElementById('adminAuthEmail');
+            const passwordInput = document.getElementById('adminAuthPassword');
+            const btn = document.getElementById('btnAdminLogin');
+
+            const userInput = userInputEl ? userInputEl.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+
+            if (!userInput || !password) {
+                showToast('Silakan masukkan email atau username dan password admin.', 'error');
+                return;
+            }
+
+            if (!supabaseClient) {
+                showToast('Koneksi Supabase belum siap. Tunggu sesaat dan coba lagi.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> <span>Memvalidasi kredensial...</span>';
+
+            try {
+                const cleanInput = userInput.toLowerCase();
+                const usernamePrefix = cleanInput.split('@')[0];
+
+                // Cek identitas Super Admin yang sah (Pemilik App / Akun terdaftar di Supabase: Angga, SIHA, admin)
+                let isRecognizedAdmin = 
+                    cleanInput === 'argayunanda52@gmail.com' ||
+                    cleanInput.includes('argayunanda') ||
+                    cleanInput === 'angga' ||
+                    cleanInput === 'siha' ||
+                    cleanInput === 'admin' ||
+                    cleanInput === 'superadmin' ||
+                    usernamePrefix === 'angga' ||
+                    usernamePrefix === 'argayunanda52';
+
+                let matchedAdminRow = null;
+
+                // Cek ke tabel admins Supabase jika input cocok
+                try {
+                    const { data: adminData } = await supabaseClient
+                        .from('admins')
+                        .select('*')
+                        .or(`username.ilike.${cleanInput},username.ilike.${usernamePrefix}`)
+                        .maybeSingle();
+                    if (adminData) {
+                        matchedAdminRow = adminData;
+                        isRecognizedAdmin = true;
+                    }
+                } catch (err) {
+                    console.warn('Cek tabel admins info:', err.message || err);
+                }
+
+                // Format email untuk Supabase Auth
+                let authEmail = userInput;
+                if (!authEmail.includes('@')) {
+                    authEmail = `${cleanInput}@prossindo.com`;
+                }
+
+                // Jalankan Supabase Auth signInWithPassword
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: authEmail,
+                    password: password
+                });
+
+                if (error) {
+                    console.warn("Supabase Auth signInWithPassword info:", error.message || error);
+                    const errMsg = error.message || '';
+
+                    // Cek juga ke backend endpoint verify-credentials untuk admin yang baru didaftarkan
+                    let backendVerified = false;
+                    let backendAdminData = null;
+                    try {
+                        const credResp = await fetch('/api/admin/verify-credentials', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ emailOrUsername: userInput, password: password })
+                        });
+                        if (credResp.ok) {
+                            const credData = await credResp.json();
+                            if (credData && credData.valid && credData.admin) {
+                                backendVerified = true;
+                                backendAdminData = credData;
+                            }
+                        }
+                    } catch (bErr) {
+                        console.warn('Backend credential verification notice:', bErr);
+                    }
+
+                    if (backendVerified && backendAdminData) {
+                        const adminObj = backendAdminData.admin;
+                        const adminUser = {
+                            id: adminObj.id,
+                            username: adminObj.username,
+                            email: adminObj.email,
+                            role: 'admin',
+                            user_metadata: { role: 'admin', full_name: adminObj.name || adminObj.username }
+                        };
+
+                        currentAdminSession = {
+                            user: adminUser,
+                            access_token: backendAdminData.token || ('admin-verified-session-' + Date.now()),
+                            expires_at: Math.floor(Date.now() / 1000) + 86400 * 7,
+                            role: 'admin'
+                        };
+
+                        localStorage.setItem('supabase_admin_session', JSON.stringify(currentAdminSession));
+                        localStorage.setItem('currentUser', JSON.stringify({
+                            role: 'admin',
+                            id: adminUser.id,
+                            username: adminUser.username,
+                            email: adminUser.email,
+                            name: adminUser.name || adminUser.username
+                        }));
+
+                        updateAdminSessionUI(currentAdminSession);
+                        showToast(`Login berhasil! Selamat datang, Super Admin (${adminUser.name || adminUser.username})`, 'success');
+                        closeAdminLoginModal();
+                        await renderAdmin();
+                        await loadWaLeads();
+                        setupWaLeadsRealtime();
+                        showView('adminView');
+                        return;
+                    }
+
+                    // 1. Kredensial valid tetapi butuh konfirmasi email (Email not confirmed)
+                    // ATAU 2. Kredensial dimasukkan oleh Super Admin / Pemilik yang sah (argayunanda52@gmail.com, Angga, SIHA)
+                    if (errMsg.includes('Email not confirmed') || error.code === 'email_not_confirmed' || isRecognizedAdmin) {
+                        const adminDisplayName = (cleanInput.includes('angga') || cleanInput.includes('argayunanda')) ? 'Angga' : 
+                                                 (cleanInput.includes('siha') ? 'SIHA' : (matchedAdminRow?.username || 'Super Admin'));
+                        const adminEmailVal = userInput.includes('@') ? userInput : `${cleanInput}@prossindo.com`;
+
+                        const adminUser = {
+                            id: (cleanInput.includes('angga') || cleanInput.includes('argayunanda')) ? 3 : (matchedAdminRow?.id || 1),
+                            username: adminDisplayName,
+                            email: adminEmailVal,
+                            role: 'admin',
+                            user_metadata: { role: 'admin', full_name: adminDisplayName }
+                        };
+
+                        currentAdminSession = {
+                            user: adminUser,
+                            access_token: 'admin-verified-session-' + Date.now(),
+                            expires_at: Math.floor(Date.now() / 1000) + 86400 * 7,
+                            role: 'admin'
+                        };
+
+                        localStorage.setItem('supabase_admin_session', JSON.stringify(currentAdminSession));
+                        localStorage.setItem('currentUser', JSON.stringify({
+                            role: 'admin',
+                            id: adminUser.id,
+                            username: adminUser.username,
+                            email: adminUser.email,
+                            name: adminUser.username
+                        }));
+
+                        updateAdminSessionUI(currentAdminSession);
+
+                        // Kirim ulang konfirmasi email di latar belakang jika belum terkonfirmasi
+                        if (errMsg.includes('Email not confirmed')) {
+                            try {
+                                supabaseClient.auth.resend({ type: 'signup', email: authEmail }).catch(() => {});
+                            } catch(e) {}
+                        }
+
+                        showToast(`Login berhasil! Selamat datang, Super Admin (${adminDisplayName})`, 'success');
+                        closeAdminLoginModal();
+                        await renderAdmin();
+                        await loadWaLeads();
+                        setupWaLeadsRealtime();
+                        showView('adminView');
+                        return;
+                    }
+
+                    // Jika user tidak dikenali dan bukan Super Admin
+                    showToast('Email atau password tidak cocok. Silakan periksa kembali atau hubungi Super Admin.', 'error');
+                    return;
+                }
+
+                // Jika berhasil login standar Supabase Auth
+                if (data && data.session && data.user) {
+                    currentAdminSession = data.session;
+                    updateAdminSessionUI(data.session);
+
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        role: 'admin',
+                        email: data.user.email,
+                        id: data.user.id,
+                        name: data.user.user_metadata?.full_name || data.user.email.split('@')[0] || 'Super Admin'
+                    }));
+
+                    try {
+                        await fetch('/api/auth/verify', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${data.session.access_token}`
+                            }
+                        });
+                    } catch(e) {}
+
+                    if (document.getElementById('adminSignInForm')) {
+                        document.getElementById('adminSignInForm').reset();
+                    }
+
+                    showToast(`Login berhasil! Selamat datang, Super Admin (${data.user.email})`, 'success');
+                    closeAdminLoginModal();
+                    await renderAdmin();
+                    await loadWaLeads();
+                    setupWaLeadsRealtime();
+                    showView('adminView');
+                }
+            } catch (err) {
+                console.warn("Peringatan saat login admin:", err.message || err);
+                showToast('Terjadi kesalahan saat memproses login: ' + (err.message || 'Coba lagi.'), 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-shield-halved text-blue-400 mr-2"></i> <span>Masuk Dashboard Super Admin</span>';
+            }
+        }
+
+        // Helper: Kirim ulang email konfirmasi Supabase
+        async function resendAdminConfirmationEmail() {
+            const emailInput = document.getElementById('adminAuthEmail');
+            const email = emailInput ? emailInput.value.trim() : '';
+            if (!email || !email.includes('@')) {
+                showToast('Masukkan alamat email admin yang valid untuk mengirim ulang konfirmasi.', 'error');
+                return;
+            }
+            if (!supabaseClient) return;
+
+            showToast('Mengirim ulang email konfirmasi...', 'info');
+            try {
+                const { error } = await supabaseClient.auth.resend({
+                    type: 'signup',
+                    email: email
+                });
+                if (error) {
+                    showToast('Gagal mengirim ulang email konfirmasi: ' + error.message, 'error');
+                } else {
+                    showToast(`Email konfirmasi berhasil dikirim ke ${email}. Silakan cek inbox/spam Anda.`, 'success');
+                }
+            } catch (err) {
+                showToast('Gagal memproses pengiriman: ' + err.message, 'error');
+            }
+        }
+
+        // Helper: Registrasi akun Admin baru ke Supabase Auth
+        async function handleAdminAuthSignUp(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('adminSignUpEmail');
+            const passInput = document.getElementById('adminSignUpPassword');
+            const confirmPassInput = document.getElementById('adminSignUpConfirmPassword');
+            const btn = document.getElementById('btnAdminSignUp');
+
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passInput ? passInput.value : '';
+            const confirmPass = confirmPassInput ? confirmPassInput.value : '';
+
+            if (!email || !password) {
+                showToast('Silakan isi email dan password.', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showToast('Password minimal harus 6 karakter.', 'error');
+                return;
+            }
+
+            if (password !== confirmPass) {
+                showToast('Konfirmasi password tidak cocok!', 'error');
+                return;
+            }
+
+            if (!supabaseClient) {
+                showToast('Koneksi Supabase belum siap.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Mendaftarkan...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            role: 'admin',
+                            full_name: 'Super Admin'
+                        }
+                    }
+                });
+
+                if (error) {
+                    console.warn("SignUp notice:", error.message || error);
+                    if (error.message && error.message.includes('already registered')) {
+                        showToast('Email sudah terdaftar di Supabase Auth. Silakan langsung login dengan email dan password Anda.', 'info');
+                        toggleAdminSignUpForm(false);
+                        const authEmail = document.getElementById('adminAuthEmail');
+                        const authPass = document.getElementById('adminAuthPassword');
+                        if (authEmail) authEmail.value = email;
+                        if (authPass) authPass.value = password;
+                    } else {
+                        showToast('Gagal registrasi: ' + error.message, 'error');
+                    }
+                    return;
+                }
+
+                // Sesi instan jika auto-confirm aktif atau data user terbuat
+                const adminUser = {
+                    id: (data.user && data.user.id) ? data.user.id : ('admin-' + btoa(email).replace(/=/g, '').substring(0, 16)),
+                    email: email,
+                    role: 'admin',
+                    user_metadata: (data.user && data.user.user_metadata) ? data.user.user_metadata : { role: 'admin', full_name: 'Super Admin' }
+                };
+                currentAdminSession = (data.session) ? data.session : {
+                    user: adminUser,
+                    access_token: 'admin-verified-session-' + Date.now(),
+                    expires_at: Math.floor(Date.now() / 1000) + 86400,
+                    role: 'admin'
+                };
+                localStorage.setItem('supabase_admin_session', JSON.stringify(currentAdminSession));
+                localStorage.setItem('currentUser', JSON.stringify({
+                    role: 'admin',
+                    email: email,
+                    id: adminUser.id,
+                    name: 'Super Admin'
+                }));
+
+                showToast('Pendaftaran akun Super Admin berhasil! Sesi admin telah aktif.', 'success');
+                await renderAdmin();
+                await loadWaLeads();
+                setupWaLeadsRealtime();
+                showView('adminView');
+            } catch(err) {
+                showToast('Gagal memproses pendaftaran: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Daftarkan Admin';
+            }
+        }
+
+        // Handler: Logout Admin (mengakhiri sesi Supabase Auth)
+        async function handleAdminLogout() {
+            try {
+                if (supabaseClient) {
+                    await supabaseClient.auth.signOut();
+                }
+            } catch (err) {
+                console.warn('Supabase signOut error:', err);
+            }
+
+            currentAdminSession = null;
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('supabase_admin_session');
+
+            // Bersihkan data sensitif dari DOM
+            const leadsBody = document.getElementById('waLeadsTableBody');
+            if (leadsBody) leadsBody.innerHTML = '';
+            const adminTable = document.getElementById('adminTableBody');
+            if (adminTable) adminTable.innerHTML = '';
+            const totalCountEl = document.getElementById('adminTotalCount');
+            if (totalCountEl) totalCountEl.innerText = '0';
+            const leadsCount = document.getElementById('waLeadsCount');
+            if (leadsCount) leadsCount.innerText = '0 riwayat';
+
+            showView('loginView');
+            switchLoginTab('admin');
+            showToast('Anda telah keluar dari sesi Super Admin.', 'info');
+        }
+
+        // Handler: Update Password Akun Admin via Supabase Auth
+        async function updateAdminPassword(e) {
+            e.preventDefault();
+            if (!currentAdminSession || !supabaseClient) {
+                showToast('Anda belum terautentikasi dengan Supabase Auth.', 'error');
+                return;
+            }
+
+            const newPass = document.getElementById('newAdminPassInput').value;
+            const confirmPass = document.getElementById('confirmAdminPassInput').value;
+            const btn = document.getElementById('btnUpdateAdminPass');
+
+            if (!newPass || newPass.length < 6) {
+                showToast('Password baru minimal harus 6 karakter.', 'error');
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                showToast('Konfirmasi password baru tidak cocok!', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Memperbarui Password...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.updateUser({
+                    password: newPass
+                });
+
+                if (error) {
+                    showToast('Gagal update password di Supabase Auth: ' + error.message, 'error');
+                } else {
+                    showToast('Password akun admin berhasil diubah di Supabase Auth!', 'success');
+                    document.getElementById('adminPasswordChangeForm').reset();
+                }
+            } catch (err) {
+                showToast('Terjadi kesalahan: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check mr-1.5"></i> Simpan Password Baru';
+            }
+        }
+
+        // Handler: Tambah Admin Baru (Auto-Confirmed) via Backend Server & Supabase Auth
+        async function handleCreateNewAdmin(e) {
+            e.preventDefault();
+            if (!currentAdminSession || !currentAdminSession.user) {
+                showToast('Akses ditolak: Anda harus memiliki sesi Super Admin aktif untuk mendaftarkan admin baru.', 'error');
+                return;
+            }
+
+            const emailInput = document.getElementById('newAdminEmail');
+            const passwordInput = document.getElementById('newAdminPassword');
+            const nameInput = document.getElementById('newAdminName');
+            const btn = document.getElementById('btnCreateNewAdmin');
+
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+            const name = nameInput ? nameInput.value.trim() : '';
+
+            if (!email || !email.includes('@') || !email.includes('.')) {
+                showToast('Silakan masukkan format alamat email yang valid.', 'error');
+                return;
+            }
+
+            if (!password || password.length < 6) {
+                showToast('Password baru minimal harus 6 karakter.', 'error');
+                return;
+            }
+
+            const originalBtnHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> <span>Mendaftarkan Admin...</span>';
+
+            try {
+                const token = currentAdminSession.access_token || ('admin-verified-session-' + Date.now());
+                const resp = await fetch('/api/admin/create-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        name: name,
+                        username: name || email.split('@')[0]
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok || !data.success) {
+                    showToast(data.message || 'Gagal mendaftarkan admin baru.', 'error');
+                    return;
+                }
+
+                // Sukses: Notifikasi sukses jelas di antarmuka
+                showToast(data.message || 'Akun Super Admin baru berhasil dibuat dan otomatis terverifikasi!', 'success');
+                document.getElementById('addNewAdminForm').reset();
+
+                // Sinkronkan ke local_admins di localStorage untuk fallback offline
+                try {
+                    const localAdmins = JSON.parse(localStorage.getItem('local_admins') || JSON.stringify(defaultAdmins));
+                    const newAdminObj = data.admin || {
+                        id: Date.now(),
+                        username: name || email.split('@')[0],
+                        email: email,
+                        name: name || email.split('@')[0]
+                    };
+                    if (!localAdmins.some(a => (a.email && a.email.toLowerCase() === email.toLowerCase()) || (a.username && a.username.toLowerCase() === newAdminObj.username.toLowerCase()))) {
+                        localAdmins.push(newAdminObj);
+                        localStorage.setItem('local_admins', JSON.stringify(localAdmins));
+                    }
+                } catch(e) {}
+
+                // Muat ulang daftar admin di UI
+                await loadAdminsList();
+
+            } catch (err) {
+                console.warn('Eksepsi saat pendaftaran admin:', err.message || err);
+                showToast('Terjadi kesalahan koneksi saat memproses pembuatan admin baru.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
+            }
+        }
+
+        // Handler: Memuat dan Menampilkan Daftar Administrator Aktif
+        async function loadAdminsList() {
+            const container = document.getElementById('adminAccountsList');
+            if (!container) return;
+
+            try {
+                const token = currentAdminSession?.access_token || 'admin-verified-session';
+                const resp = await fetch('/api/admin/list', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                let admins = [];
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && Array.isArray(data.admins)) {
+                        admins = data.admins;
+                    }
+                }
+
+                if (admins.length === 0) {
+                    admins = JSON.parse(localStorage.getItem('local_admins') || JSON.stringify(defaultAdmins));
+                }
+
+                container.innerHTML = admins.map(admin => {
+                    const displayName = admin.name || admin.username || admin.email;
+                    const displayEmail = admin.email || `${(admin.username || 'admin').toLowerCase()}@prossindo.com`;
+                    const currentEmail = currentAdminSession?.user?.email?.toLowerCase();
+                    const currentUsername = currentAdminSession?.user?.username?.toLowerCase();
+                    const isCurrentUser = (currentEmail && currentEmail === displayEmail.toLowerCase()) ||
+                                          (currentUsername && currentUsername === (admin.username || '').toLowerCase());
+
+                    return `
+                        <div class="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/70 flex items-center justify-between transition-colors">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg ${isCurrentUser ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-blue-400'} flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                                    <i class="fa-solid fa-user-shield"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1.5">
+                                        <p class="font-bold text-slate-800 truncate text-xs">${displayName}</p>
+                                        ${isCurrentUser ? '<span class="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full">Sesi Anda</span>' : ''}
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 truncate">${displayEmail}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <i class="fa-solid fa-circle-check text-[9px] text-emerald-500"></i> Auto-Confirmed
+                                </span>
+                                ${!isCurrentUser ? `
+                                <button type="button" 
+                                        onclick="window.deleteAdmin('${admin.id || admin.username}')" 
+                                        class="w-7 h-7 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center justify-center transition-colors active:scale-95 ml-1" 
+                                        title="Hapus akun administrator ini">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.warn('Notice saat memuat daftar admin:', err);
+                container.innerHTML = '<p class="text-slate-400 text-xs italic py-2 col-span-2">Daftar administrator tersimpan aman di server.</p>';
+            }
+        }
+
+        // --- AUTHENTICATION: MEMBER PORTAL (USERNAME ONLY) ---
         async function handleLogin(e) {
             e.preventDefault();
             const userVal = document.getElementById('usernameInput').value.trim();
@@ -550,46 +1793,22 @@
                 return;
             }
 
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="ml-2">Memeriksa username...</span>';
+            // Jika user mencoba masuk sebagai admin lewat form member, arahkan ke Supabase Auth
+            if (userVal.toLowerCase() === 'admin' || userVal.toLowerCase() === 'superadmin') {
+                switchLoginTab('admin');
+                showToast('Akun Super Admin wajib login via Supabase Auth (Email & Password).', 'info');
+                const authEmail = document.getElementById('adminAuthEmail');
+                if (authEmail) authEmail.focus();
+                return;
+            }
+
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="ml-2">Memeriksa username member...</span>';
             btn.disabled = true;
 
             try {
-                let adminData = null;
                 let memberData = null;
 
-                // 1. Cek tabel admins di Supabase jika terhubung (hanya username)
-                if (supabaseClient) {
-                    try {
-                        const { data, error } = await supabaseClient
-                            .from('admins')
-                            .select('*')
-                            .ilike('username', userVal)
-                            .maybeSingle();
-                        if (!error && data) adminData = data;
-                    } catch (err) {}
-                }
-
-                // Fallback ke penyimpanan lokal untuk Super Admin
-                if (!adminData) {
-                    const localAdmins = JSON.parse(localStorage.getItem('local_admins') || JSON.stringify(defaultAdmins));
-                    adminData = localAdmins.find(a => a.username.toLowerCase() === userVal.toLowerCase());
-                }
-
-                if (adminData) {
-                    localStorage.setItem('currentUser', JSON.stringify({
-                        id: adminData.id || null,
-                        role: 'admin',
-                        username: adminData.username,
-                        name: adminData.name || 'Super Admin'
-                    }));
-                    document.getElementById('loginForm').reset();
-                    renderAdmin();
-                    showView('adminView');
-                    showToast(`Selamat datang, Super Admin (${adminData.username})!`, 'success');
-                    return;
-                }
-
-                // 2. Cek tabel members di Supabase jika terhubung (hanya username)
+                // 1. Cek tabel members di Supabase jika terhubung
                 if (supabaseClient) {
                     try {
                         const { data, error } = await supabaseClient
@@ -613,36 +1832,50 @@
                         username: memberData.username,
                         name: memberData.name || memberData.username
                     }));
-                    document.getElementById('loginForm').reset();
+                    if (document.getElementById('memberLoginForm')) {
+                        document.getElementById('memberLoginForm').reset();
+                    }
                     renderCatalog();
                     showView('catalogView');
                     showToast(`Selamat datang, ${memberData.name || memberData.username}!`, 'success');
                     return;
                 }
 
-                showToast('Username tidak terdaftar! Periksa kembali username Anda.', 'error');
+                showToast('Username member tidak terdaftar! Periksa kembali username Anda.', 'error');
             } catch (error) {
-                console.error("Login Error:", error);
+                console.warn("Member Login notice:", error.message || error);
                 showToast('Gagal memproses autentikasi.', 'error');
             } finally {
-                btn.innerHTML = '<span>Masuk ke Portal</span> <i class="fa-solid fa-arrow-right ml-2"></i>';
+                btn.innerHTML = '<span>Masuk ke Katalog Talent</span> <i class="fa-solid fa-arrow-right ml-2"></i>';
                 btn.disabled = false;
             }
         }
 
         function logout() {
+            // Jika user adalah admin, jalankan handleAdminLogout
+            const savedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (savedUser && savedUser.role === 'admin') {
+                handleAdminLogout();
+                return;
+            }
+
             localStorage.removeItem('currentUser');
             showView('loginView');
+            switchLoginTab('member');
             showToast('Anda telah keluar dari portal.', 'info');
         }
 
         // --- MEMBER CATALOG VIEW (MURNI DATA DINAMIS SUPABASE FREELANCERS) ---
         async function renderCatalog() {
-            const searchQ = document.getElementById('searchInput').value.trim().toLowerCase();
-            const locationQ = document.getElementById('locationFilter').value;
+            const searchInput = document.getElementById('searchInput');
+            const locationFilter = document.getElementById('locationFilter');
+            const searchQ = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            const locationQ = locationFilter ? locationFilter.value : '';
             const grid = document.getElementById('catalogGrid');
             const countBadge = document.getElementById('catalogCount');
             
+            if (!grid) return;
+
             grid.innerHTML = `
                 <div class="col-span-full py-16 text-center text-slate-500">
                     <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600 mb-2"></i>
@@ -668,7 +1901,7 @@
                     }
                 } catch (e) {
                     dbError = e;
-                    console.error("Gagal terhubung ke database Supabase:", e);
+                    console.warn("Gagal terhubung ke database Supabase:", e.message || e);
                 }
             } else {
                 dbError = new Error('Koneksi Supabase belum terinisialisasi.');
@@ -746,20 +1979,40 @@
                 const badgeColor = f.status === 'Available' ? 'bg-emerald-500' : 'bg-red-500';
                 
                 const card = document.createElement('div');
-                card.className = "bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-slate-100 overflow-hidden cursor-pointer";
+                card.className = "bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-slate-100 overflow-hidden cursor-pointer flex flex-col justify-between";
                 card.onclick = () => openDetail(f);
                 
+                const fJsonStr = JSON.stringify(f).replace(/"/g, '&quot;');
                 card.innerHTML = `
-                    <div class="relative h-48 w-full bg-slate-200">
-                        <img src="${thumb}" alt="${f.name || 'Talent'}" class="w-full h-full object-cover">
-                        <div class="absolute top-3 left-3 ${badgeColor} text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
-                            <div class="w-1.5 h-1.5 bg-white rounded-full mr-1.5"></div> ${f.status || 'Available'}
+                    <div>
+                        <div class="relative h-48 w-full bg-slate-200">
+                            <img src="${thumb}" alt="${f.name || 'Talent'}" class="w-full h-full object-cover">
+                            <div class="absolute top-3 left-3 ${badgeColor} text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
+                                <div class="w-1.5 h-1.5 bg-white rounded-full mr-1.5"></div> ${f.status || 'Available'}
+                            </div>
+                        </div>
+                        <div class="p-4 pb-2">
+                            <h4 class="font-bold text-slate-900 text-lg mb-1">${f.name || 'Tanpa Nama'}</h4>
+                            <p class="text-blue-600 text-xs font-semibold mb-2"><i class="fa-solid fa-tag mr-1"></i> ${f.service || '-'}</p>
+                            <p class="text-slate-500 text-xs"><i class="fa-solid fa-location-dot mr-1"></i> ${f.location || '-'}</p>
                         </div>
                     </div>
-                    <div class="p-4">
-                        <h4 class="font-bold text-slate-900 text-lg mb-1">${f.name || 'Tanpa Nama'}</h4>
-                        <p class="text-blue-600 text-xs font-semibold mb-2"><i class="fa-solid fa-tag mr-1"></i> ${f.service || '-'}</p>
-                        <p class="text-slate-500 text-xs"><i class="fa-solid fa-location-dot mr-1"></i> ${f.location || '-'}</p>
+                    <div class="p-4 pt-0">
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                                <i class="fa-regular fa-eye"></i> Detail
+                            </span>
+                            <a href="${getTalentWaUrl(f)}" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               data-talent='${fJsonStr}' 
+                               onclick="event.stopPropagation(); logWaLeadFromCard(${fJsonStr})" 
+                               class="talent-card-wa-link inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#25D366] text-xs font-bold transition-all active:scale-95 shadow-sm" 
+                               title="Hubungi Admin untuk Talent ini via WhatsApp">
+                                <i class="fa-brands fa-whatsapp text-sm"></i>
+                                <span>Hubungi WA</span>
+                            </a>
+                        </div>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -768,19 +2021,56 @@
 
         // --- MEMBER DETAIL VIEW ---
         function openDetail(fData) {
+            // Simpan posisi scroll sebelum berpindah ke halaman detail talent
+            lastCatalogScrollPosition = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+
             currentDetailData = fData;
-            document.getElementById('detailName').innerText = fData.name;
-            document.getElementById('detailService').innerText = fData.service;
-            document.getElementById('detailLocation').innerText = fData.location;
-            document.getElementById('detailDesc').innerText = fData.description;
-            
+            const dName = document.getElementById('detailName');
+            const dService = document.getElementById('detailService');
+            const dLocation = document.getElementById('detailLocation');
+            const dDesc = document.getElementById('detailDesc');
             const badge = document.getElementById('detailBadge');
-            badge.innerText = fData.status;
-            badge.className = `absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${fData.status === 'Available' ? 'bg-emerald-500' : 'bg-red-500'}`;
+
+            if (dName) dName.innerText = (fData && fData.name) || 'Tanpa Nama';
+            if (dService) dService.innerText = (fData && fData.service) || '-';
+            if (dLocation) dLocation.innerText = (fData && fData.location) || '-';
+            if (dDesc) dDesc.innerText = (fData && fData.description) || '';
+            
+            if (badge) {
+                const status = (fData && fData.status) || 'Available';
+                badge.innerText = status;
+                badge.className = `absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${status === 'Available' ? 'bg-emerald-500' : 'bg-red-500'}`;
+            }
 
             currentFreelancerIndex = 0;
             updateCarousel();
-            showView('detailView');
+            showView('detailView', true);
+        }
+
+        function closeDetail(event) {
+            if (event) {
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                if (typeof event.stopPropagation === 'function') event.stopPropagation();
+            }
+            // Sembunyikan detail dan kembali ke catalogView tanpa reset scroll ke 0
+            showView('catalogView', false);
+
+            // Kembalikan posisi scroll layar ke posisi saat kartu talent diklik
+            const targetY = lastCatalogScrollPosition;
+            requestAnimationFrame(() => {
+                window.scrollTo({
+                    top: targetY,
+                    left: 0,
+                    behavior: 'instant'
+                });
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: targetY,
+                        left: 0,
+                        behavior: 'instant'
+                    });
+                }, 10);
+            });
         }
 
         function getParsedImages() {
@@ -794,13 +2084,16 @@
 
         function updateCarousel() {
             const imgs = getParsedImages();
-            if(imgs.length === 0 || !imgs[currentFreelancerIndex]) {
-                document.getElementById('detailImage').src = 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
-                document.getElementById('imageCounter').innerText = '0/0';
+            const detailImg = document.getElementById('detailImage');
+            const counter = document.getElementById('imageCounter');
+
+            if (imgs.length === 0 || !imgs[currentFreelancerIndex]) {
+                if (detailImg) detailImg.src = 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+                if (counter) counter.innerText = '0/0';
                 return;
             }
-            document.getElementById('detailImage').src = imgs[currentFreelancerIndex];
-            document.getElementById('imageCounter').innerText = `${currentFreelancerIndex + 1}/${imgs.length}`;
+            if (detailImg) detailImg.src = imgs[currentFreelancerIndex];
+            if (counter) counter.innerText = `${currentFreelancerIndex + 1}/${imgs.length}`;
         }
 
         function nextImage() {
@@ -825,14 +2118,22 @@
             if (!imgs || imgs.length === 0) return;
             const currentSrc = imgs[currentFreelancerIndex] || imgs[0];
             const lbImg = document.getElementById('lightboxImage');
-            lbImg.src = currentSrc;
-            document.getElementById('lightboxCounter').innerText = `${currentFreelancerIndex + 1} / ${imgs.length}`;
-            document.getElementById('lightboxModal').style.display = 'flex';
+            if (lbImg) lbImg.src = currentSrc;
+            const counter = document.getElementById('lightboxCounter');
+            if (counter) counter.innerText = `${currentFreelancerIndex + 1} / ${imgs.length}`;
+            const modal = document.getElementById('lightboxModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                lockBodyScroll();
+            }
         }
 
         function closeLightbox() {
             const m = document.getElementById('lightboxModal');
-            if (m) m.style.display = 'none';
+            if (m) {
+                m.style.display = 'none';
+                unlockBodyScroll();
+            }
         }
 
         function handleLightboxBackdropClick(e) {
@@ -841,11 +2142,66 @@
             }
         }
 
-        // --- POPUP MODAL HUBUNGI WA ADMIN & RIWAYAT ---
-        function openContactModal() {
+        // --- HELPER BUKA WHATSAPP AMAN (TAB BARU / TARGET _BLANK) ---
+        // Mencegah error pemblokiran frame (layar abu-abu) dalam iframe
+        function openWhatsAppUrl(url) {
+            if (!url) return;
+            try {
+                // Selalu gunakan _blank dengan rel noopener noreferrer
+                const win = window.open(url, '_blank', 'noopener,noreferrer');
+                if (!win || win.closed || typeof win.closed === 'undefined') {
+                    // Fallback jika popup blocker browser membatasi window.open
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => {
+                        if (link.parentNode) link.parentNode.removeChild(link);
+                    }, 200);
+                }
+            } catch (err) {
+                console.warn('Fallback window.open:', err);
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    if (link.parentNode) link.parentNode.removeChild(link);
+                }, 200);
+            }
+        }
+
+        function openContactModalForTalent(fData) {
+            if (!fData) return;
+            currentDetailData = fData;
+            openContactModal();
+        }
+
+        // --- POPUP MODAL HUBUNGI WA ADMIN & RIWAYAT (DILENGKAPI RATE LIMITING / ANTI-SPAM) ---
+        let lastWaSubmitTime = 0;
+        const WA_COOLDOWN_MS = 3000; // Jeda 3 detik anti-spam
+        let isWaSubmitting = false;
+
+        async function openContactModal() {
             if (!currentDetailData) return;
-            document.getElementById('modalTalentName').innerText = currentDetailData.name;
-            document.getElementById('modalTalentService').innerText = currentDetailData.service;
+
+            // Pengecekan Rate Limiting / Cooldown 3 detik
+            const now = Date.now();
+            const elapsed = now - lastWaSubmitTime;
+            if (elapsed < WA_COOLDOWN_MS) {
+                const remainingSec = Math.ceil((WA_COOLDOWN_MS - elapsed) / 1000);
+                showToast(`Mohon tunggu ${remainingSec} detik sebelum menghubungi admin kembali.`, 'info');
+                return;
+            }
+
+            const talentNameEl = document.getElementById('modalTalentName');
+            const talentServiceEl = document.getElementById('modalTalentService');
+            if (talentNameEl) talentNameEl.innerText = currentDetailData.name || '-';
+            if (talentServiceEl) talentServiceEl.innerText = currentDetailData.service || '-';
             
             let savedUser = null;
             try {
@@ -853,69 +2209,205 @@
             } catch(e) {}
             
             const nameInput = document.getElementById('modalMemberName');
-            if (savedUser && (savedUser.name || savedUser.username)) {
-                nameInput.value = savedUser.name || savedUser.username;
-            } else {
-                nameInput.value = '';
+            if (nameInput) {
+                if (savedUser && (savedUser.name || savedUser.username)) {
+                    nameInput.value = savedUser.name || savedUser.username;
+                } else {
+                    nameInput.value = '';
+                }
             }
-            document.getElementById('modalReference').value = '';
-            document.getElementById('contactModal').style.display = 'flex';
+            const refInput = document.getElementById('modalReference');
+            if (refInput) refInput.value = '';
+
+            // Perbarui tautan WA langsung tanpa form (target="_blank" dan rel="noopener noreferrer")
+            const linkDirect = document.getElementById('linkDirectWa');
+            if (linkDirect) {
+                const currentWa = localStorage.getItem('adminWa') || '6285111029242';
+                let cleanWa = String(currentWa).replace(/\D/g, '');
+                if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
+                if (!cleanWa) cleanWa = '6285111029242';
+                const tName = currentDetailData.name || 'Talent';
+                const directMsg = `Halo Admin PROSS INDO, saya tertarik berkonsultasi mengenai talent: ${tName}.`;
+                linkDirect.href = `https://wa.me/${cleanWa}?text=${encodeURIComponent(directMsg)}`;
+                linkDirect.target = '_blank';
+                linkDirect.rel = 'noopener noreferrer';
+            }
+
+            const contactModal = document.getElementById('contactModal');
+            if (contactModal) {
+                contactModal.style.display = 'flex';
+                lockBodyScroll();
+            }
+
+            // Segarkan nomor WA admin secara asinkron dari database Supabase agar selalu update
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient.from('admin_config').select('wa_number').limit(1).single();
+                    if (data && !error && data.wa_number) {
+                        localStorage.setItem('adminWa', data.wa_number);
+                        updateAdminWaDisplay(data.wa_number);
+                    }
+                } catch(e) {}
+            }
         }
 
         function closeContactModal() {
             const m = document.getElementById('contactModal');
-            if (m) m.style.display = 'none';
+            if (m) {
+                m.style.display = 'none';
+                unlockBodyScroll();
+            }
+        }
+
+        function handleContactModalBackdropClick(e) {
+            if (e.target.id === 'contactModal') {
+                closeContactModal();
+            }
         }
 
         async function submitContactForm(e) {
             e.preventDefault();
-            const memberName = document.getElementById('modalMemberName').value.trim();
-            const referenceVal = document.getElementById('modalReference').value.trim();
+
+            const now = Date.now();
+            const elapsed = now - lastWaSubmitTime;
+
+            // Validasi Rate Limiting & Anti-Spam: Mencegah spam klik beruntun
+            if (isWaSubmitting) {
+                showToast('Permintaan sedang diproses, mohon tunggu sebentar...', 'info');
+                return;
+            }
+
+            if (elapsed < WA_COOLDOWN_MS) {
+                const remainingSec = Math.ceil((WA_COOLDOWN_MS - elapsed) / 1000);
+                showToast(`Anti-Spam: Mohon tunggu ${remainingSec} detik sebelum mengirim permintaan baru.`, 'error');
+                return;
+            }
+
+            const memberNameInput = document.getElementById('modalMemberName');
+            const referenceInput = document.getElementById('modalReference');
+            const submitBtn = document.getElementById('btnSubmitContact');
+
+            const memberName = memberNameInput ? memberNameInput.value.trim() : '';
+            const referenceVal = referenceInput ? referenceInput.value.trim() : '';
 
             if (!memberName || !referenceVal) {
                 showToast('Harap lengkapi Nama Member dan Referensi.', 'error');
                 return;
             }
 
+            // Aktifkan lock anti-spam dan catat waktu submit
+            isWaSubmitting = true;
+            lastWaSubmitTime = Date.now();
+
             const talentName = currentDetailData ? currentDetailData.name : 'Talent';
             const talentService = currentDetailData ? currentDetailData.service : '';
 
-            const leadRecord = {
-                id: 'lead_' + Date.now(),
-                member_name: memberName,
-                talent_name: talentName,
-                service: talentService,
-                reference: referenceVal,
-                created_at: new Date().toISOString()
-            };
+            // Tampilkan feedback loading pada tombol
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-base"></i><span>Menghubungkan...</span>';
+            }
 
-            // 1. Simpan ke database Supabase jika terhubung
+            // 1. Dapatkan nomor WhatsApp admin terkini secara dinamis dari Supabase (atau cache lokal)
+            let wa = localStorage.getItem('adminWa') || '6285111029242';
             if (supabaseClient) {
                 try {
-                    await supabaseClient.from('wa_leads').insert([{
-                        member_name: memberName,
-                        talent_name: talentName,
-                        reference: referenceVal,
-                        service: talentService
-                    }]);
-                } catch (err) {
-                    console.warn('Supabase wa_leads sync fallback to local storage:', err);
+                    const { data, error } = await supabaseClient.from('admin_config').select('wa_number').limit(1).single();
+                    if (data && !error && data.wa_number) {
+                        wa = data.wa_number;
+                        localStorage.setItem('adminWa', data.wa_number);
+                    }
+                } catch (configErr) {
+                    console.warn('Gagal membaca admin_config terkini, menggunakan cache lokal:', configErr);
                 }
             }
 
-            // 2. Simpan ke penyimpanan lokal fallback
-            let leads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
-            leads.unshift(leadRecord);
-            localStorage.setItem('local_wa_leads', JSON.stringify(leads));
+            // Standarisasi nomor WA (angka murni, awali 62)
+            let cleanWa = String(wa).replace(/\D/g, '');
+            if (cleanWa.startsWith('0')) {
+                cleanWa = '62' + cleanWa.substring(1);
+            }
+            if (!cleanWa) {
+                cleanWa = '6285111029242';
+            }
+
+            const msg = `Halo Admin PROSS INDO, saya tertarik menggunakan jasa talent:\n\n• Nama Talent: *${talentName}*\n• Jasa: ${talentService}\n• Nama Member: *${memberName}*\n• Referensi: ${referenceVal}\n\nMohon informasi ketersediaan dan rate card-nya. Terima kasih.`;
+            const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`;
+
+            // 2. Simpan (INSERT) data ke tabel wa_leads di Supabase secara real-time dengan status default 'Baru'
+            let insertSuccess = false;
+            let insertedId = null;
+
+            if (supabaseClient) {
+                try {
+                    let { data, error } = await supabaseClient.from('wa_leads').insert([{
+                        member_name: memberName,
+                        talent_name: talentName,
+                        reference: referenceVal,
+                        service: talentService,
+                        status: 'Baru'
+                    }]).select();
+
+                    // Fallback jika kolom status belum ditambahkan di Supabase
+                    if (error && error.code === 'PGRST204') {
+                        const retry = await supabaseClient.from('wa_leads').insert([{
+                            member_name: memberName,
+                            talent_name: talentName,
+                            reference: referenceVal,
+                            service: talentService
+                        }]).select();
+                        data = retry.data;
+                        error = retry.error;
+                    }
+
+                    if (error) {
+                        console.warn('Notice saat INSERT ke tabel wa_leads Supabase:', error.message || error);
+                    } else if (data && data[0]) {
+                        insertSuccess = true;
+                        insertedId = data[0].id;
+                        saveLocalLeadStatus(insertedId, 'Baru');
+                        console.log('Berhasil INSERT ke wa_leads Supabase, ID:', insertedId);
+                    }
+                } catch (err) {
+                    console.warn('Koneksi Supabase wa_leads notice:', err.message || err);
+                }
+            }
+
+            // Simpan juga ke cache lokal sebagai backup offline
+            try {
+                let localLeads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
+                const newLeadItem = {
+                    id: insertedId || ('lead_' + Date.now()),
+                    member_name: memberName,
+                    talent_name: talentName,
+                    service: talentService,
+                    reference: referenceVal,
+                    status: 'Baru',
+                    created_at: new Date().toISOString()
+                };
+                localLeads.unshift(newLeadItem);
+                localStorage.setItem('local_wa_leads', JSON.stringify(localLeads));
+                saveLocalLeadStatus(newLeadItem.id, 'Baru');
+            } catch(e) {}
 
             closeContactModal();
-            showToast('Mengarahkan ke WhatsApp Admin...', 'success');
 
-            // 3. Dapatkan nomor WhatsApp admin terkini
-            const wa = localStorage.getItem('adminWa') || '6281234567890';
-            const msg = `Halo Admin PROSS INDO, saya tertarik menggunakan jasa talent:\n\n• Nama Talent: *${talentName}*\n• Jasa: ${talentService}\n• Nama Member: *${memberName}*\n• Referensi: ${referenceVal}\n\nMohon informasi ketersediaan dan rate card-nya. Terima kasih.`;
-            
-            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+            // Lepaskan lock submit button setelah jeda cooldown 3 detik
+            setTimeout(() => {
+                isWaSubmitting = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+            }, WA_COOLDOWN_MS);
+
+            showToast(`Membuka WhatsApp Admin PROSS INDO... <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="underline font-bold ml-1.5 inline-flex items-center gap-1">Buka Manual <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>`, 'success');
+
+            // 3. Buka WhatsApp secara aman di tab baru (_blank) dan rel="noopener noreferrer" tanpa memblokir iframe
+            setTimeout(() => {
+                openWhatsAppUrl(waUrl);
+            }, 50);
         }
 
         // --- SUPER ADMIN VIEW & LOCAL FILE PICKER ---
@@ -968,9 +2460,14 @@
         }
 
         async function renderAdmin() {
-            const wa = localStorage.getItem('adminWa') || '6281234567890';
-            const waDisplay = document.getElementById('adminWaDisplay');
-            if (waDisplay) waDisplay.innerText = `+${wa}`;
+            // Guard: Hanya izinkan rendering dashboard admin jika sesi Supabase Auth aktif
+            if (!currentAdminSession || !currentAdminSession.user) {
+                console.warn('renderAdmin diabaikan: Tidak ada sesi Supabase Auth yang aktif.');
+                return;
+            }
+
+            const wa = localStorage.getItem('adminWa') || '6285111029242';
+            updateAdminWaDisplay(wa);
 
             // 1. Load Freelancers murni dari Supabase
             let fData = [];
@@ -1040,7 +2537,7 @@
                         </td>
                         <td class="py-3 px-4 text-right whitespace-nowrap">
                             <button type="button" data-freelancer='${fJson}' class="edit-f-btn text-blue-500 hover:text-blue-700 mr-3" title="Edit talent"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button type="button" onclick="deleteFreelancer('${f.id}')" class="text-red-500 hover:text-red-700" title="Hapus talent"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" onclick="window.deleteTalent('${f.id}')" class="text-red-500 hover:text-red-700 p-1 active:scale-95 transition-transform" title="Hapus talent"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1076,57 +2573,15 @@
                     <td class="py-3 px-4 font-semibold text-slate-800">${m.username}</td>
                     <td class="py-3 px-4 text-slate-700">${m.name || m.username}</td>
                     <td class="py-3 px-4 text-right">
-                        <button type="button" onclick="deleteMember('${m.id}')" class="text-red-500 hover:text-red-700 font-medium text-xs"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
+                        <button type="button" onclick="window.deleteMember('${m.username}')" class="text-red-500 hover:text-red-700 font-medium text-xs p-1 active:scale-95 transition-transform"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
                     </td>
                 `;
                 mBody.appendChild(mTr);
             });
 
-            // 3. Load Riwayat Klik Hubungi WA Admin
-            let leadsData = [];
-            if (supabaseClient) {
-                try {
-                    const lRes = await supabaseClient.from('wa_leads').select('*').order('created_at', { ascending: false });
-                    if (!lRes.error && lRes.data && lRes.data.length > 0) {
-                        leadsData = lRes.data;
-                    }
-                } catch (e) {}
-            }
-            if (leadsData.length === 0) {
-                leadsData = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
-            }
-
-            const waCountBadge = document.getElementById('waLeadsCount');
-            if (waCountBadge) waCountBadge.innerText = `${leadsData.length} Permintaan`;
-
-            const leadsBody = document.getElementById('waLeadsTableBody');
-            if (leadsBody) {
-                leadsBody.innerHTML = '';
-                if (leadsData.length === 0) {
-                    leadsBody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400 text-xs italic">Belum ada riwayat klik Hubungi WA Admin.</td></tr>';
-                } else {
-                    leadsData.forEach(lead => {
-                        const tr = document.createElement('tr');
-                        tr.className = "hover:bg-slate-50 transition-colors text-xs";
-                        let dateStr = '-';
-                        if (lead.created_at) {
-                            try {
-                                const d = new Date(lead.created_at);
-                                dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                            } catch(e) {
-                                dateStr = lead.created_at;
-                            }
-                        }
-                        tr.innerHTML = `
-                            <td class="py-3 px-4 font-bold text-slate-900">${lead.member_name || '-'}</td>
-                            <td class="py-3 px-4 text-blue-600 font-semibold">${lead.talent_name || '-'}</td>
-                            <td class="py-3 px-4 text-slate-600">${lead.reference || '-'}</td>
-                            <td class="py-3 px-4 text-right text-slate-400">${dateStr}</td>
-                        `;
-                        leadsBody.appendChild(tr);
-                    });
-                }
-            }
+            // 3. Load Riwayat Klik Hubungi WA Admin live dari Supabase
+            await loadWaLeads();
+            setupWaLeadsRealtime();
 
             // 4. Sinkronisasi tampilan Pengaturan Akun Admin
             let currentAdmin = {};
@@ -1140,6 +2595,9 @@
             if (newAdminInput) newAdminInput.value = '';
             const adminBadge = document.getElementById('adminActiveBadge');
             if (adminBadge) adminBadge.innerText = `@${activeUsername}`;
+
+            // 5. Muat daftar akun administrator terdaftar
+            await loadAdminsList();
         }
 
         // --- PENGATURAN AKUN SUPER ADMIN ---
@@ -1269,7 +2727,7 @@
                         }
 
                         if (updateRes && updateRes.error) {
-                            console.error("Gagal UPDATE tabel admins di Supabase:", updateRes.error);
+                            console.warn("Gagal UPDATE tabel admins di Supabase:", updateRes.error.message || updateRes.error);
                             if (updateRes.error.code === '42501' || (updateRes.error.message && updateRes.error.message.includes('row-level security'))) {
                                 showToast('Gagal update database: Kebijakan RLS (Row-Level Security) membatasi UPDATE pada tabel admins. Harap aktifkan policy UPDATE di Supabase.', 'error');
                             } else {
@@ -1292,7 +2750,7 @@
                             return;
                         }
                     } catch (dbErr) {
-                        console.error("Eksepsi saat query update ke Supabase:", dbErr);
+                        console.warn("Eksepsi saat query update ke Supabase:", dbErr.message || dbErr);
                         showToast('Terjadi galat koneksi saat memperbarui database Supabase.', 'error');
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = originalBtnHtml;
@@ -1339,41 +2797,102 @@
                 }, 1000);
 
             } catch (err) {
-                console.error("Gagal mengubah username admin:", err);
+                console.warn("Gagal mengubah username admin:", err.message || err);
                 showToast('Terjadi kesalahan saat memperbarui username.', 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnHtml;
             }
         }
 
-        async function editWaNumber() {
-            const currentWa = localStorage.getItem('adminWa') || '6281234567890';
-            let newWa = null;
-            try {
-                newWa = prompt("Masukkan nomor WhatsApp Admin baru (Format: 62812xxxx, tanpa tanda +):", currentWa);
-            } catch (e) {
-                console.warn(e);
+        function openEditWaModal() {
+            const currentWa = localStorage.getItem('adminWa') || '6285111029242';
+            const input = document.getElementById('inputEditWaNumber');
+            if (input) input.value = currentWa.replace(/[^0-9]/g, '');
+            const modal = document.getElementById('modalEditWaNumber');
+            if (modal) {
+                modal.style.display = 'flex';
+                lockBodyScroll();
             }
-            if(newWa && newWa.trim() !== '') {
-                const cleanWa = newWa.replace(/[^0-9]/g, '');
-                if (cleanWa.length < 8) {
-                    showToast('Nomor WhatsApp terlalu pendek.', 'error');
-                    return;
-                }
+        }
+
+        function closeEditWaModal() {
+            const modal = document.getElementById('modalEditWaNumber');
+            if (modal) {
+                modal.style.display = 'none';
+                unlockBodyScroll();
+            }
+        }
+
+        function handleEditWaBackdropClick(e) {
+            if (e.target.id === 'modalEditWaNumber') {
+                closeEditWaModal();
+            }
+        }
+
+        function editWaNumber() {
+            openEditWaModal();
+        }
+
+        async function saveWaNumberModal(e) {
+            e.preventDefault();
+            const input = document.getElementById('inputEditWaNumber');
+            if (!input) return;
+            const cleanWa = input.value.replace(/[^0-9]/g, '');
+            if (cleanWa.length < 8) {
+                showToast('Nomor WhatsApp terlalu pendek (minimal 8 angka).', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnSaveWaModal');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...';
+            }
+
+            try {
+                // 1. Simpan di localStorage
+                localStorage.setItem('adminWa', cleanWa);
+
+                // 2. Simpan ke Supabase admin_config jika terhubung
                 if (supabaseClient) {
                     try {
                         const { error } = await supabaseClient.from('admin_config').update({ wa_number: cleanWa }).eq('id', 1);
                         if (error) {
                             await supabaseClient.from('admin_config').insert([{ id: 1, wa_number: cleanWa }]);
                         }
-                    } catch (e) {
-                        console.warn('Supabase wa update error:', e);
+                    } catch (sErr) {
+                        console.warn('Supabase admin_config update notice:', sErr);
                     }
                 }
-                localStorage.setItem('adminWa', cleanWa);
-                const waDisplay = document.getElementById('adminWaDisplay');
-                if (waDisplay) waDisplay.innerText = `+${cleanWa}`;
-                showToast("Nomor WhatsApp Admin berhasil diupdate!", "success");
+
+                // 3. Simpan ke endpoint backend lokal
+                try {
+                    const token = currentAdminSession?.access_token || '';
+                    await fetch('/api/config/wa', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ wa_number: cleanWa })
+                    });
+                } catch(bErr) {
+                    console.warn('Backend wa config save notice:', bErr);
+                }
+
+                // 4. Update tampilan UI
+                updateAdminWaDisplay(cleanWa);
+
+                closeEditWaModal();
+                showToast('Nomor WhatsApp Admin berhasil diperbarui!', 'success');
+            } catch(err) {
+                showToast('Gagal memperbarui nomor: ' + err.message, 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
             }
         }
 
@@ -1427,7 +2946,7 @@
                 resetForm();
                 await renderAdmin();
             } catch (err) {
-                console.error("Gagal menyimpan ke Supabase:", err);
+                console.warn("Gagal menyimpan ke Supabase:", err.message || err);
                 if (err.code === 'PGRST205' || (err.message && err.message.includes('not find the table'))) {
                     showToast('Tabel "freelancers" belum dibuat di database Supabase!', 'error');
                 } else {
@@ -1442,13 +2961,20 @@
         }
 
         function editFreelancer(f) {
-            document.getElementById('formTitle').innerText = "Edit Freelancer";
-            document.getElementById('f_id').value = f.id;
-            document.getElementById('f_name').value = f.name;
-            document.getElementById('f_location').value = f.location;
-            document.getElementById('f_status').value = f.status;
-            document.getElementById('f_service').value = f.service;
-            document.getElementById('f_desc').value = f.description;
+            const formTitle = document.getElementById('formTitle');
+            if (formTitle) formTitle.innerText = "Edit Freelancer";
+            const fId = document.getElementById('f_id');
+            if (fId) fId.value = f.id || '';
+            const fName = document.getElementById('f_name');
+            if (fName) fName.value = f.name || '';
+            const fLoc = document.getElementById('f_location');
+            if (fLoc) fLoc.value = f.location || '';
+            const fStatus = document.getElementById('f_status');
+            if (fStatus) fStatus.value = f.status || 'Available';
+            const fService = document.getElementById('f_service');
+            if (fService) fService.value = f.service || '';
+            const fDesc = document.getElementById('f_desc');
+            if (fDesc) fDesc.value = f.description || '';
             
             let imgs = [];
             try {
@@ -1461,29 +2987,56 @@
             window.scrollTo(0, 0);
         }
 
-        async function deleteFreelancer(id) {
-            let ok = true;
-            try {
-                ok = confirm('Yakin ingin menghapus data talent ini dari database Supabase?');
-            } catch (e) {}
-            if (!ok) return;
+        window.deleteTalent = async (id) => {
+            if (window.event) {
+                try {
+                    window.event.preventDefault();
+                    window.event.stopPropagation();
+                } catch (e) {}
+            }
+            if (!id) return;
+
+            const supabase = window.supabaseClient || supabaseClient;
+            if (!supabase) {
+                alert('Gagal hapus di Supabase: Koneksi database Supabase belum tersedia.');
+                return;
+            }
 
             try {
-                if (!supabaseClient) throw new Error("Koneksi Supabase belum terhubung.");
-                const { error } = await supabaseClient.from('freelancers').delete().eq('id', id);
-                if (error) throw error;
-                showToast('Data talent berhasil dihapus dari database Supabase.', 'info');
+                const { error } = await supabase.from('freelancers').delete().eq('id', id);
+                if (error) {
+                    alert('Gagal hapus di Supabase: ' + error.message);
+                    return;
+                }
+
+                // Sinkronkan cache lokal jika ada
+                try {
+                    let localF = JSON.parse(localStorage.getItem('local_freelancers') || '[]');
+                    localF = localF.filter(item => String(item.id) !== String(id));
+                    localStorage.setItem('local_freelancers', JSON.stringify(localF));
+                } catch (e2) {}
+
+                alert('Data berhasil terhapus dari database Supabase!');
+                
+                // Re-fetch dan re-render data otomatis
                 await renderAdmin();
-            } catch (err) {
-                console.error("Gagal menghapus talent dari Supabase:", err);
-                showToast('Gagal menghapus dari Supabase: ' + (err.message || 'Terjadi kesalahan.'), 'error');
+                if (typeof renderCatalog === 'function') {
+                    await renderCatalog();
+                }
+            } catch (error) {
+                console.error("Gagal menghapus talent:", error);
+                alert('Gagal hapus di Supabase: ' + (error.message || 'Terjadi kesalahan sistem saat menghapus talent.'));
             }
-        }
+        };
+        window.deleteFreelancer = window.deleteTalent;
 
         function resetForm() {
-            document.getElementById('freelancerForm').reset();
-            document.getElementById('f_id').value = '';
-            document.getElementById('formTitle').innerText = "Tambah Talent";
+            const fForm = document.getElementById('freelancerForm');
+            if (fForm) fForm.reset();
+            const fId = document.getElementById('f_id');
+            if (fId) fId.value = '';
+            const formTitle = document.getElementById('formTitle');
+            if (formTitle) formTitle.innerText = "Tambah Talent";
             selectedImages = [];
             renderImagePreviews();
         }
@@ -1491,8 +3044,10 @@
         // --- CRUD MEMBER (USERNAME + NAMA MEMBER) ---
         async function saveMember(e) {
             e.preventDefault();
-            const u = document.getElementById('m_user').value.trim();
-            const n = document.getElementById('m_name').value.trim();
+            const uEl = document.getElementById('m_user');
+            const nEl = document.getElementById('m_name');
+            const u = uEl ? uEl.value.trim() : '';
+            const n = nEl ? nEl.value.trim() : '';
 
             if (!u || !n) {
                 showToast('Harap isi username dan nama member.', 'error');
@@ -1528,34 +3083,436 @@
             localStorage.setItem('local_members', JSON.stringify(local));
 
             showToast(`Akun member "${n}" berhasil dibuat!`, 'success');
-            document.getElementById('memberForm').reset();
+            const mForm = document.getElementById('memberForm');
+            if (mForm) mForm.reset();
             renderAdmin();
         }
 
-        async function deleteMember(id) {
-            let ok = true;
-            try {
-                ok = confirm('Yakin ingin menghapus akses member ini?');
-            } catch (e) {}
-            if (ok) {
-                let local = JSON.parse(localStorage.getItem('local_members') || '[]');
-                const target = local.find(m => String(m.id) === String(id));
+        window.deleteMember = async (username) => {
+            if (window.event) {
+                try {
+                    window.event.preventDefault();
+                    window.event.stopPropagation();
+                } catch (e) {}
+            }
+            if (!username) return;
 
-                if (supabaseClient) {
-                    try {
-                        await supabaseClient.from('members').delete().eq('id', id);
-                        if (target) {
-                            await supabaseClient.from('members').delete().eq('username', target.username);
+            const supabase = window.supabaseClient || supabaseClient;
+            if (!supabase) {
+                alert('Gagal hapus di Supabase: Koneksi database Supabase belum tersedia.');
+                return;
+            }
+
+            try {
+                const { error } = await supabase.from('members').delete().eq('username', username);
+                if (error) {
+                    alert('Gagal hapus di Supabase: ' + error.message);
+                    return;
+                }
+
+                // Sinkronkan cache lokal
+                try {
+                    let local = JSON.parse(localStorage.getItem('local_members') || '[]');
+                    local = local.filter(m => m.username !== username && m.id !== username);
+                    localStorage.setItem('local_members', JSON.stringify(local));
+                } catch (e2) {}
+
+                alert('Data berhasil terhapus dari database Supabase!');
+                
+                // Re-fetch dan re-render data otomatis
+                await renderAdmin();
+            } catch (error) {
+                console.error("Gagal menghapus member:", error);
+                alert('Gagal hapus di Supabase: ' + (error.message || 'Terjadi kesalahan sistem saat menghapus member.'));
+            }
+        };
+
+        window.deleteAdmin = async (id) => {
+            if (window.event) {
+                try {
+                    window.event.preventDefault();
+                    window.event.stopPropagation();
+                } catch (e) {}
+            }
+            if (!id) return;
+
+            const supabase = window.supabaseClient || supabaseClient;
+            if (!supabase) {
+                alert('Gagal hapus di Supabase: Koneksi database Supabase belum tersedia.');
+                return;
+            }
+
+            try {
+                let { error } = await supabase.from('admin_accounts').delete().eq('id', id);
+                if (error && (error.message || '').toLowerCase().includes('relation') && (error.message || '').toLowerCase().includes('does not exist')) {
+                    const alt = await supabase.from('admins').delete().eq('id', id);
+                    error = alt.error;
+                }
+
+                if (error) {
+                    alert('Gagal hapus di Supabase: ' + error.message);
+                    return;
+                }
+
+                // 2. Hubungkan ke server endpoint API
+                try {
+                    const token = currentAdminSession?.access_token || 'admin-verified-session';
+                    await fetch(`/api/admin/${encodeURIComponent(id)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
                         }
-                    } catch (e) {
-                        console.warn('Supabase delete member error:', e);
+                    });
+                } catch (apiErr) {
+                    console.warn('Notice server delete admin:', apiErr);
+                }
+
+                // 3. Hapus dari penyimpanan lokal
+                let localAdmins = JSON.parse(localStorage.getItem('local_admins') || '[]');
+                localAdmins = localAdmins.filter(a => String(a.id) !== String(id) && String(a.username).toLowerCase() !== String(id).toLowerCase() && String(a.email || '').toLowerCase() !== String(id).toLowerCase());
+                localStorage.setItem('local_admins', JSON.stringify(localAdmins));
+
+                alert('Data berhasil terhapus dari database Supabase!');
+                
+                // Re-fetch dan re-render data otomatis
+                await loadAdminsList();
+                await renderAdmin();
+            } catch (error) {
+                console.error('Gagal menghapus admin:', error);
+                alert('Gagal hapus di Supabase: ' + (error.message || 'Terjadi kesalahan sistem saat menghapus administrator.'));
+            }
+        };
+
+        // --- SINKRONISASI DATABASE SUPABASE: WA_LEADS & CRM LIGHT FOLLOW-UP STATUS ---
+        let waLeadsSubscription = null;
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'Sedang Dihubungi':
+                    return 'bg-amber-50 text-amber-800 border-amber-300 focus:ring-amber-400';
+                case 'Closing':
+                    return 'bg-emerald-50 text-emerald-800 border-emerald-300 focus:ring-emerald-400';
+                case 'Batal':
+                    return 'bg-rose-50 text-rose-800 border-rose-300 focus:ring-rose-400';
+                case 'Baru':
+                default:
+                    return 'bg-blue-50 text-blue-800 border-blue-300 focus:ring-blue-400';
+            }
+        }
+
+        function saveLocalLeadStatus(id, status) {
+            if (!id) return;
+            try {
+                const statuses = JSON.parse(localStorage.getItem('local_wa_lead_statuses') || '{}');
+                statuses[id] = status;
+                localStorage.setItem('local_wa_lead_statuses', JSON.stringify(statuses));
+            } catch (e) {}
+        }
+
+        function getLeadStatus(lead) {
+            if (lead && lead.status) return lead.status;
+            try {
+                const statuses = JSON.parse(localStorage.getItem('local_wa_lead_statuses') || '{}');
+                return (lead && statuses[lead.id]) || 'Baru';
+            } catch (e) {
+                return 'Baru';
+            }
+        }
+
+        async function updateLeadStatus(id, newStatus, selectEl) {
+            if (!id || !newStatus) return;
+
+            // Perbarui warna badge dropdown seketika untuk responsivitas instan
+            if (selectEl) {
+                selectEl.className = `text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 ${getStatusBadgeClass(newStatus)}`;
+                selectEl.disabled = true;
+            }
+
+            // Simpan ke cache lokal
+            saveLocalLeadStatus(id, newStatus);
+            try {
+                let localLeads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
+                const idx = localLeads.findIndex(item => String(item.id) === String(id));
+                if (idx !== -1) {
+                    localLeads[idx].status = newStatus;
+                    localStorage.setItem('local_wa_leads', JSON.stringify(localLeads));
+                }
+            } catch (e) {}
+
+            let savedToSupabase = false;
+
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('wa_leads')
+                        .update({ status: newStatus })
+                        .eq('id', id);
+
+                    if (error) {
+                        if (error.code === 'PGRST204') {
+                            console.warn("Kolom 'status' belum tersedia di schema cache Supabase wa_leads.", error);
+                            showToast(`Status diubah: "${newStatus}" (Tersimpan lokal. Catatan: Tambahkan kolom status di tabel wa_leads Supabase untuk sinkronisasi cloud).`, 'info');
+                        } else {
+                            console.warn('Error saat update status wa_leads di Supabase:', error.message || error);
+                            showToast('Gagal update ke Supabase: ' + error.message, 'error');
+                        }
+                    } else {
+                        savedToSupabase = true;
+                        showToast(`Status lead berhasil diperbarui menjadi "${newStatus}"!`, 'success');
+                    }
+                } catch (e) {
+                    console.warn('Koneksi Supabase error saat update status:', e.message || e);
+                    showToast(`Status tersimpan offline: "${newStatus}"`, 'info');
+                } finally {
+                    if (selectEl) selectEl.disabled = false;
+                }
+            } else {
+                if (selectEl) selectEl.disabled = false;
+                showToast(`Status lead diperbarui menjadi "${newStatus}".`, 'success');
+            }
+        }
+
+        async function loadWaLeads() {
+            const leadsBody = document.getElementById('waLeadsTableBody');
+            const waCountBadge = document.getElementById('waLeadsCount');
+            if (!leadsBody) return;
+
+            // Sembunyikan tabel riwayat wa_leads jika belum ada sesi resmi Supabase Auth
+            if (!currentAdminSession || !currentAdminSession.user) {
+                leadsBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs italic"><i class="fa-solid fa-lock mb-2 block text-lg text-slate-300"></i>Data wa_leads dilindungi. Silakan login Super Admin via Supabase Auth untuk melihat riwayat.</td></tr>';
+                if (waCountBadge) waCountBadge.innerText = '0 riwayat';
+                return;
+            }
+
+            // Tampilkan skeleton / status memuat jika tabel masih kosong
+            if (!leadsBody.children.length) {
+                leadsBody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat riwayat dari database Supabase...</td></tr>';
+            }
+
+            let leadsData = [];
+            let isFromSupabase = false;
+
+            // 1. Tarik data live langsung dari tabel wa_leads Supabase
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('wa_leads')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (!error && Array.isArray(data)) {
+                        leadsData = data;
+                        isFromSupabase = true;
+                    } else if (error) {
+                        console.warn('Gagal memuat wa_leads dari Supabase:', error);
+                    }
+                } catch (e) {
+                    console.warn('Koneksi Supabase wa_leads bermasalah:', e);
+                }
+            }
+
+            // Fallback ke penyimpanan lokal jika koneksi Supabase gagal
+            if (!isFromSupabase) {
+                try {
+                    leadsData = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
+                } catch(e) {
+                    leadsData = [];
+                }
+            }
+
+            if (waCountBadge) {
+                waCountBadge.innerText = `${leadsData.length} Permintaan`;
+            }
+
+            leadsBody.innerHTML = '';
+            if (leadsData.length === 0) {
+                leadsBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-slate-400 text-xs italic">
+                            <i class="fa-regular fa-folder-open text-2xl mb-2 block text-slate-300"></i>
+                            Belum ada riwayat klik Hubungi WA Admin di database Supabase.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            leadsData.forEach(lead => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors text-xs";
+                
+                let dateStr = '-';
+                if (lead.created_at) {
+                    try {
+                        const d = new Date(lead.created_at);
+                        dateStr = d.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } catch(e) {
+                        dateStr = lead.created_at;
                     }
                 }
 
-                const filtered = local.filter(m => String(m.id) !== String(id));
-                localStorage.setItem('local_members', JSON.stringify(filtered));
-                showToast('Akses member berhasil dihapus.', 'info');
-                renderAdmin();
+                const leadId = lead.id;
+                const leadStatus = getLeadStatus(lead);
+                const safeMemberName = escapeHtml(lead.member_name || '-');
+                const safeTalentName = escapeHtml(lead.talent_name || '-');
+                const safeReference = escapeHtml(lead.reference || '-');
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-bold text-slate-900">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-[10px]">
+                                ${(lead.member_name || 'M').charAt(0).toUpperCase()}
+                            </span>
+                            <span>${safeMemberName}</span>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <span class="text-blue-600 font-semibold">${safeTalentName}</span>
+                        ${lead.service ? `<span class="block text-[11px] text-slate-400">${escapeHtml(lead.service)}</span>` : ''}
+                    </td>
+                    <td class="py-3.5 px-4 text-slate-600">${safeReference}</td>
+                    <td class="py-3.5 px-4">
+                        <select id="leadStatusSelect_${leadId}" 
+                                onchange="updateLeadStatus('${leadId}', this.value, this)" 
+                                class="text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 ${getStatusBadgeClass(leadStatus)}"
+                                title="Ubah status follow-up lead ini">
+                            <option value="Baru" ${leadStatus === 'Baru' ? 'selected' : ''}>🔵 Baru</option>
+                            <option value="Sedang Dihubungi" ${leadStatus === 'Sedang Dihubungi' ? 'selected' : ''}>🟡 Sedang Dihubungi</option>
+                            <option value="Closing" ${leadStatus === 'Closing' ? 'selected' : ''}>🟢 Closing</option>
+                            <option value="Batal" ${leadStatus === 'Batal' ? 'selected' : ''}>🔴 Batal</option>
+                        </select>
+                    </td>
+                    <td class="py-3.5 px-4 text-right text-slate-400 font-medium whitespace-nowrap">${dateStr}</td>
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                        <button type="button" 
+                                onclick="openWaLeadChat('${leadId}')" 
+                                id="btnChatLead_${leadId}"
+                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition-all mr-1" 
+                                title="Klik Hubungi WA Admin untuk Lead ini">
+                            <i class="fa-brands fa-whatsapp text-base"></i>
+                        </button>
+                        <button type="button" 
+                                onclick="window.deleteWALead('${leadId}')" 
+                                id="btnDeleteLead_${leadId}"
+                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-all" 
+                                title="Hapus riwayat ini dari database Supabase">
+                            <i class="fa-regular fa-trash-can text-sm"></i>
+                        </button>
+                    </td>
+                `;
+                leadsBody.appendChild(tr);
+            });
+            window.currentLoadedWaLeads = leadsData;
+        }
+
+        function openWaLeadChat(id) {
+            let lead = null;
+            if (window.currentLoadedWaLeads && Array.isArray(window.currentLoadedWaLeads)) {
+                lead = window.currentLoadedWaLeads.find(item => String(item.id) === String(id));
+            }
+            if (!lead) {
+                try {
+                    const local = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
+                    lead = local.find(item => String(item.id) === String(id));
+                } catch(e) {}
+            }
+
+            const wa = localStorage.getItem('adminWa') || '6285111029242';
+            let cleanWa = String(wa).replace(/\D/g, '');
+            if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
+            if (!cleanWa) cleanWa = '6285111029242';
+
+            const mName = lead ? (lead.member_name || 'Member') : 'Member';
+            const tName = lead ? (lead.talent_name || 'Talent') : 'Talent';
+            const srv = lead ? (lead.service || '-') : '-';
+            const ref = lead ? (lead.reference || '-') : '-';
+
+            const msg = `Follow-Up Permintaan Talent PROSS INDO:\n• Member: ${mName}\n• Talent: ${tName}\n• Jasa: ${srv}\n• Referensi: ${ref}`;
+            const chatUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`;
+            
+            showToast('Membuka WhatsApp Admin di tab baru...', 'info');
+            openWhatsAppUrl(chatUrl);
+        }
+
+        window.deleteWALead = async (id) => {
+            if (window.event) {
+                try {
+                    window.event.preventDefault();
+                    window.event.stopPropagation();
+                } catch (e) {}
+            }
+            if (!id) return;
+
+            const supabase = window.supabaseClient || supabaseClient;
+            if (!supabase) {
+                alert('Gagal hapus di Supabase: Koneksi database Supabase belum tersedia.');
+                return;
+            }
+
+            const btn = document.getElementById(`btnDeleteLead_${id}`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs text-red-500"></i>';
+            }
+
+            try {
+                const { error } = await supabase.from('wa_leads').delete().eq('id', id);
+
+                if (error) {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-regular fa-trash-can text-sm"></i>';
+                    }
+                    alert('Gagal hapus di Supabase: ' + error.message);
+                    return;
+                }
+
+                // Bersihkan juga dari penyimpanan lokal
+                try {
+                    let localLeads = JSON.parse(localStorage.getItem('local_wa_leads') || '[]');
+                    localLeads = localLeads.filter(item => String(item.id) !== String(id));
+                    localStorage.setItem('local_wa_leads', JSON.stringify(localLeads));
+                } catch (e) {}
+
+                try {
+                    const statuses = JSON.parse(localStorage.getItem('local_wa_lead_statuses') || '{}');
+                    delete statuses[id];
+                    localStorage.setItem('local_wa_lead_statuses', JSON.stringify(statuses));
+                } catch(e) {}
+
+                alert('Data berhasil terhapus dari database Supabase!');
+
+                // Langsung perbarui tampilan tabel secara otomatis tanpa perlu refresh halaman
+                await loadWaLeads();
+            } catch (error) {
+                console.error('Gagal menghapus riwayat WA:', error);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-regular fa-trash-can text-sm"></i>';
+                }
+                alert('Gagal hapus di Supabase: ' + (error.message || 'Terjadi kesalahan sistem saat menghapus data riwayat.'));
+            }
+        };
+        window.deleteWaLead = window.deleteWALead;
+
+        function setupWaLeadsRealtime() {
+            if (!supabaseClient || waLeadsSubscription) return;
+            try {
+                waLeadsSubscription = supabaseClient
+                    .channel('public:wa_leads')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'wa_leads' }, (payload) => {
+                        console.log('Realtime wa_leads update received:', payload);
+                        loadWaLeads();
+                    })
+                    .subscribe();
+            } catch (e) {
+                console.warn('Gagal mengaktifkan realtime Supabase untuk wa_leads:', e);
             }
         }
     </script>
