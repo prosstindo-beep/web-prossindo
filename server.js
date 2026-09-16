@@ -3,40 +3,79 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
 import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// Blokir keras (HTTP 403) permintaan ke file berekstensi .json, .js, atau .env dari client
+// Blokir keras (HTTP 403) permintaan ke file sensitif server, secrets, dan database lokal
 app.use((req, res, next) => {
   const parsedPath = (req.path || '').toLowerCase();
-  const ext = path.extname(parsedPath);
   if (
-    ext === '.json' || 
-    ext === '.js' || 
-    ext === '.env' || 
     parsedPath.includes('.env') || 
+    parsedPath.includes('server.js') || 
     parsedPath.includes('admins.json') || 
-    parsedPath.includes('config.json')
+    parsedPath.includes('config.json') ||
+    parsedPath.endsWith('package.json') ||
+    parsedPath.endsWith('tsconfig.json')
   ) {
-    return res.status(403).json({ error: 'Access Denied: Forbidden file type' });
+    return res.status(403).json({ error: 'Access Denied: Forbidden file' });
   }
   next();
 });
 
-const ADMINS_FILE = path.join(__dirname, 'admins.json');
-const CONFIG_FILE = path.join(__dirname, 'config.json');
+// ==========================================
+// RATE LIMITERS (express-rate-limit)
+// ==========================================
+
+// 1. Batasi login admin maksimal 5 percobaan per 15 menit untuk mencegah brute-force
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 menit
+  max: 5, // Maksimal 5 percobaan
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    valid: false,
+    message: 'Terlalu banyak percobaan login admin (maksimal 5 kali). Silakan coba lagi setelah 15 menit.'
+  }
+});
+
+// 2. Batasi endpoint wa_leads / pendaftaran lead maksimal 10 permintaan per menit untuk mencegah spam database
+const waLeadsLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 menit
+  max: 10, // Maksimal 10 permintaan
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    data: null,
+    error: {
+      message: 'Terlalu banyak permintaan pembuatan lead WhatsApp (maksimal 10 per menit). Harap tunggu 1 menit.'
+    }
+  }
+});
+
+// Middleware untuk menerapkan waLeadsLimiter khusus operasi tabel wa_leads
+const checkWaLeadsRateLimit = (req, res, next) => {
+  const targetTable = String(req.params.table || req.body?.table || req.query?.table || '').toLowerCase();
+  if (targetTable === 'wa_leads') {
+    return waLeadsLimiter(req, res, next);
+  }
+  next();
+};
 
 function getSupabaseConfig() {
-  let url = process.env.SUPABASE_URL || 'https://gnapicvrnwyrjyqipxew.supabase.co';
-  let key = process.env.SUPABASE_KEY || 'sb_publishable_rVZ8cowvhojE3RuvBXQ_Xw_aftVOotX';
-  let serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let url = process.env.SUPABASE_URL || '';
+  let key = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || '';
+  let serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
   // Deteksi dan perbaiki otomatis jika SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY tertukar di environment
   if (url && !url.startsWith('http')) {
@@ -44,8 +83,10 @@ function getSupabaseConfig() {
       const temp = url;
       url = serviceKey;
       serviceKey = temp;
-    } else {
-      url = 'https://gnapicvrnwyrjyqipxew.supabase.co';
+    } else if (key && key.startsWith('http')) {
+      const temp = url;
+      url = key;
+      key = temp;
     }
   }
 
@@ -70,80 +111,172 @@ function getSupabaseClient() {
   return supabaseClientInstance;
 }
 
-function getAppConfig() {
-  try {
-    if (fs.existsSync(CONFIG_FILE)) {
-      const data = fs.readFileSync(CONFIG_FILE, 'utf-8');
-      const parsed = JSON.parse(data);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        return parsed;
+// Operasi konfigurasi WhatsApp langsung dan penuh ke tabel admin_config di database Supabase
+async function getAppConfigFromDb() {
+  const sb = getSupabaseClient();
+  if (sb) {
+    try {
+      const { data, error } = await sb
+        .from('admin_config')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (!error && data && data.wa_number) {
+        return { wa_number: String(data.wa_number).trim() };
       }
-      console.error('CRITICAL: config.json format tidak valid, menggunakan konfigurasi default.');
+    } catch (err) {
+      console.warn('[CONFIG] Peringatan saat membaca admin_config dari Supabase:', err.message || err);
     }
-  } catch (e) {
-    console.error('CRITICAL: Gagal membaca/parse config.json (file corrupt):', e.message || e);
   }
   return { wa_number: '6285111029242' };
 }
 
-function saveAppConfig(cfg) {
-  try {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('CRITICAL: Gagal menyimpan config.json:', e.message || e);
+async function saveAppConfigToDb(waNumber) {
+  const sb = getSupabaseClient();
+  if (!sb) {
+    throw new Error('Layanan database Supabase tidak tersedia.');
+  }
+
+  const { data: existing, error: findErr } = await sb
+    .from('admin_config')
+    .select('id')
+    .eq('id', 1)
+    .maybeSingle();
+
+  if (findErr) {
+    console.warn('[CONFIG] Query check admin_config:', findErr.message);
+  }
+
+  if (existing) {
+    const { data, error } = await sb
+      .from('admin_config')
+      .update({ wa_number: waNumber, updated_at: new Date().toISOString() })
+      .eq('id', 1)
+      .select();
+
+    if (error) throw error;
+    return data?.[0] || { wa_number: waNumber };
+  } else {
+    const { data, error } = await sb
+      .from('admin_config')
+      .insert([{ id: 1, wa_number: waNumber, updated_at: new Date().toISOString() }])
+      .select();
+
+    if (error) throw error;
+    return data?.[0] || { wa_number: waNumber };
   }
 }
 
-function getAdminsFromFile() {
-  try {
-    if (fs.existsSync(ADMINS_FILE)) {
-      const data = fs.readFileSync(ADMINS_FILE, 'utf-8');
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        return parsed;
+// ==========================================
+// SUPABASE STORAGE FOR FREELANCER IMAGES
+// Bucket: 'freelancer-images'
+// ==========================================
+
+let bucketCheckPromise = null;
+async function ensureFreelancerImagesBucket(sb) {
+  if (!sb) return;
+  if (!bucketCheckPromise) {
+    bucketCheckPromise = (async () => {
+      try {
+        const { data: buckets } = await sb.storage.listBuckets();
+        const exists = (buckets || []).some(b => b.name === 'freelancer-images');
+        if (!exists) {
+          console.log('[STORAGE] Membuat bucket public "freelancer-images" di Supabase...');
+          await sb.storage.createBucket('freelancer-images', {
+            public: true,
+            fileSizeLimit: 10485760, // 10MB
+            allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif']
+          });
+        }
+      } catch (e) {
+        console.warn('[STORAGE] Pemeriksaan bucket storage:', e.message || e);
       }
-      console.error('CRITICAL: admins.json bukan array, menggunakan daftar admin default.');
-    }
-  } catch (e) {
-    console.error('CRITICAL: Gagal membaca/parse admins.json (file corrupt):', e.message || e);
+    })();
   }
-  return [
-    {
-      id: 1,
-      email: 'siha@prossindo.com',
-      username: 'SIHA',
-      name: 'SIHA Admin',
-      role: 'admin',
-      autoConfirmed: true,
-      createdAt: '2026-09-13T12:16:28.227Z'
-    },
-    {
-      id: 3,
-      email: 'argayunanda52@gmail.com',
-      username: 'Angga',
-      name: 'Angga Yunanda',
-      role: 'admin',
-      autoConfirmed: true,
-      createdAt: '2026-09-13T16:10:42.456Z'
-    }
-  ];
+  return bucketCheckPromise;
 }
 
-function saveAdminsToFile(admins) {
-  try {
-    if (!Array.isArray(admins)) {
-      console.error('CRITICAL: saveAdminsToFile menerima data non-array.');
-      return;
-    }
-    fs.writeFileSync(ADMINS_FILE, JSON.stringify(admins, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('CRITICAL: Gagal menyimpan admins.json:', e.message || e);
+// Unggah data gambar (base64) ke Supabase Storage bucket 'freelancer-images' dan kembalikan URL publik
+async function uploadImageToSupabaseStorage(base64Data, sb, preferredName = '') {
+  if (!base64Data || typeof base64Data !== 'string') return null;
+  // Jika sudah merupakan link URL eksternal (http/https), kembalikan langsung
+  if (base64Data.startsWith('http://') || base64Data.startsWith('https://')) {
+    return base64Data;
   }
+
+  await ensureFreelancerImagesBucket(sb);
+
+  let mimeType = 'image/jpeg';
+  let base64String = base64Data;
+  const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if (matches && matches.length === 3) {
+    mimeType = matches[1];
+    base64String = matches[2];
+  }
+
+  const buffer = Buffer.from(base64String, 'base64');
+  let ext = mimeType.split('/')[1] || 'jpg';
+  if (ext === 'jpeg') ext = 'jpg';
+  if (preferredName && preferredName.includes('.')) {
+    const extMatch = preferredName.split('.').pop().toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extMatch)) {
+      ext = extMatch === 'jpeg' ? 'jpg' : extMatch;
+    }
+  }
+
+  const uniqueFilename = `freelancer-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+
+  const { data, error } = await sb.storage
+    .from('freelancer-images')
+    .upload(uniqueFilename, buffer, {
+      contentType: mimeType,
+      upsert: true
+    });
+
+  if (error) {
+    console.error('[STORAGE] Gagal upload ke bucket freelancer-images:', error.message);
+    throw error;
+  }
+
+  const { data: pubData } = sb.storage.from('freelancer-images').getPublicUrl(uniqueFilename);
+  const publicUrl = pubData?.publicUrl;
+  console.log(`[STORAGE] Berhasil upload gambar ke Supabase Storage: ${publicUrl}`);
+  return publicUrl || null;
 }
 
-function hashPassword(password, salt = 'prossindo-super-admin-salt') {
-  if (!password || typeof password !== 'string') return '';
-  return crypto.createHash('sha256').update(password + salt).digest('hex');
+// Helper untuk memastikan semua gambar freelancer disimpan sebagai URL Supabase Storage, bukan Base64
+async function processFreelancerImagesForStorage(images, sb) {
+  if (!images || !sb) return images;
+  let imgArray = [];
+  if (typeof images === 'string') {
+    try {
+      imgArray = JSON.parse(images);
+    } catch (e) {
+      imgArray = [images];
+    }
+  } else if (Array.isArray(images)) {
+    imgArray = [...images];
+  } else {
+    return images;
+  }
+
+  const finalUrls = [];
+  for (const item of imgArray) {
+    if (typeof item === 'string') {
+      if (item.startsWith('data:image/')) {
+        try {
+          const uploadedUrl = await uploadImageToSupabaseStorage(item, sb);
+          if (uploadedUrl) finalUrls.push(uploadedUrl);
+        } catch (err) {
+          console.warn('[STORAGE] Gagal konversi base64 ke Storage URL:', err.message);
+        }
+      } else if (item.startsWith('http://') || item.startsWith('https://')) {
+        finalUrls.push(item);
+      }
+    }
+  }
+  return finalUrls;
 }
 
 // Server-side state sederhana (Map global) untuk melacak token sesi admin yang sah secara acak
@@ -173,35 +306,96 @@ function verifyServerSessionToken(token) {
 async function verifyAdminAuth(req) {
   const authHeader = req.headers.authorization;
   const token = (authHeader && authHeader.startsWith('Bearer ')) 
-    ? authHeader.substring(7) 
-    : req.body?.token;
+    ? authHeader.substring(7).trim() 
+    : (req.body?.token || req.query?.token);
 
   if (!token) return null;
 
-  // 1. Verifikasi dari server-side session state yang sah
-  const serverAdmin = verifyServerSessionToken(token);
-  if (serverAdmin) {
-    return { role: 'admin', isSuperAdmin: true, user: serverAdmin };
+  const sb = getSupabaseClient();
+  if (!sb) {
+    console.warn('[AUTH] Supabase client tidak tersedia untuk verifikasi admin.');
+    return null;
   }
 
-  // 2. Verifikasi token Supabase Auth jika menggunakan token JWT Supabase
-  const { supabaseUrl, supabaseKey } = getSupabaseConfig();
   try {
-    const resp = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'apikey': supabaseKey
-      }
-    });
-    const data = await resp.json();
-    if (resp.ok && data && data.id) {
-      return { role: 'admin', isSuperAdmin: true, user: data };
-    }
-  } catch (err) {
-    console.warn('Auth token verification notice:', err.message || err);
-  }
+    // 1. Validasi token JWT langsung ke Supabase Auth
+    let authUser = null;
+    const { data: authData, error: authError } = await sb.auth.getUser(token);
 
-  return null;
+    if (!authError && authData && authData.user) {
+      authUser = authData.user;
+    } else {
+      // Fallback: periksa jika token merupakan server session token yang valid
+      const sessionUser = verifyServerSessionToken(token);
+      if (sessionUser) {
+        // Tetap pastikan akun terdaftar di tabel admins Supabase dengan role = 'admin'
+        const { data: adminRows } = await sb.from('admins').select('*');
+        const foundInDb = adminRows?.find(a => 
+          (a.username && a.username.toLowerCase() === (sessionUser.username || '').toLowerCase()) ||
+          (a.email && a.email.toLowerCase() === (sessionUser.email || '').toLowerCase())
+        );
+        if (foundInDb && (foundInDb.role === 'admin' || !foundInDb.role)) {
+          return { role: 'admin', isSuperAdmin: true, user: sessionUser };
+        }
+      }
+      return null;
+    }
+
+    if (!authUser) return null;
+
+    const authEmail = (authUser.email || '').toLowerCase();
+    const authCandidate = authEmail.includes('@') ? authEmail.split('@')[0] : authEmail;
+    const metadataUsername = (authUser.user_metadata?.username || '').toLowerCase();
+
+    // 2. Memastikan akun pengguna memiliki role = 'admin' pada tabel admins
+    const { data: adminRows, error: dbError } = await sb
+      .from('admins')
+      .select('*');
+
+    if (dbError || !Array.isArray(adminRows) || adminRows.length === 0) {
+      console.warn('[AUTH] Gagal memuat tabel admins atau tabel kosong di Supabase:', dbError?.message);
+      return null;
+    }
+
+    const matchedAdmin = adminRows.find(a => {
+      const u = (a.username || '').toLowerCase();
+      const e = (a.email || '').toLowerCase();
+      const idStr = String(a.id || '');
+      return (
+        (e && e === authEmail) ||
+        (u && (u === authEmail || u === authCandidate || (metadataUsername && u === metadataUsername))) ||
+        (idStr && idStr === String(authUser.id))
+      );
+    });
+
+    if (!matchedAdmin) {
+      console.warn(`[AUTH] User JWT (${authEmail}) tidak ditemukan di tabel admins Supabase.`);
+      return null;
+    }
+
+    // Pastikan akun memiliki role = 'admin'
+    const roleValue = matchedAdmin.role || 'admin';
+    if (roleValue !== 'admin') {
+      console.warn(`[AUTH] User JWT (${authEmail}) tidak memiliki role 'admin' di tabel admins (role: ${roleValue}).`);
+      return null;
+    }
+
+    return {
+      role: 'admin',
+      isSuperAdmin: true,
+      user: {
+        id: matchedAdmin.id,
+        authId: authUser.id,
+        email: matchedAdmin.email || authUser.email,
+        username: matchedAdmin.username || authCandidate,
+        name: matchedAdmin.name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || matchedAdmin.username,
+        role: 'admin'
+      }
+    };
+  } catch (err) {
+    console.error('[AUTH] Kesalahan saat verifikasi token JWT admin:', err.message || err);
+    return null;
+  }
 }
 
 app.get('/api/health', (req, res) => {
@@ -218,11 +412,18 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-app.get('/api/config/wa', (req, res) => {
-  const cfg = getAppConfig();
-  res.json({ wa_number: cfg.wa_number || '6285111029242' });
+// Mengambil konfigurasi WhatsApp langsung dari tabel admin_config Supabase
+app.get('/api/config/wa', async (req, res) => {
+  try {
+    const cfg = await getAppConfigFromDb();
+    res.json({ wa_number: cfg.wa_number || '6285111029242' });
+  } catch (err) {
+    console.error('Error fetching WA config from Supabase:', err.message || err);
+    res.json({ wa_number: '6285111029242' });
+  }
 });
 
+// Menyimpan pembaruan konfigurasi WhatsApp langsung dan penuh ke tabel admin_config Supabase
 app.post('/api/config/wa', async (req, res) => {
   const adminAuth = await verifyAdminAuth(req);
   if (!adminAuth) {
@@ -239,29 +440,17 @@ app.post('/api/config/wa', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Nomor WhatsApp minimal 8 angka.' });
   }
 
-  const cfg = getAppConfig();
-  cfg.wa_number = clean;
-  saveAppConfig(cfg);
-
-  // Sinkronisasi ke tabel admin_config Supabase jika memungkinkan
-  const { supabaseUrl, supabaseKey, serviceRoleKey } = getSupabaseConfig();
   try {
-    const key = serviceRoleKey || supabaseKey;
-    await fetch(`${supabaseUrl}/rest/v1/admin_config?id=eq.1`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ wa_number: clean })
+    await saveAppConfigToDb(clean);
+    console.log(`[CONFIG] Nomor WhatsApp berhasil diperbarui ke tabel admin_config Supabase: ${clean}`);
+    res.json({ success: true, wa_number: clean });
+  } catch (err) {
+    console.error('Error saat menyimpan nomor WhatsApp ke tabel admin_config Supabase:', err.message || err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Gagal memperbarui nomor WhatsApp di database: ' + (err.message || 'Kesalahan server') 
     });
-  } catch (e) {
-    console.warn('Sync admin_config notice:', e.message || e);
   }
-
-  res.json({ success: true, wa_number: clean });
 });
 
 // Endpoint untuk verifikasi sesi Supabase Auth di sisi server
@@ -305,58 +494,50 @@ app.post('/api/auth/verify', async (req, res) => {
   }
 });
 
-// Endpoint untuk mengambil daftar admin (Hanya dapat diakses oleh admin aktif)
+// Endpoint untuk mengambil daftar admin (Hanya dapat diakses oleh admin aktif, langsung dari tabel admins Supabase)
 app.get('/api/admin/list', async (req, res) => {
   const adminAuth = await verifyAdminAuth(req);
   if (!adminAuth) {
     return res.status(401).json({ success: false, message: 'Akses ditolak. Sesi admin aktif diperlukan.' });
   }
 
-  const admins = getAdminsFromFile();
-  const map = new Map();
-
-  admins.forEach(a => {
-    const key = (a.username || a.email || String(a.id)).toLowerCase();
-    map.set(key, {
-      id: a.id,
-      email: a.email,
-      username: a.username,
-      name: a.name || a.username,
-      role: a.role || 'admin',
-      autoConfirmed: a.autoConfirmed !== false,
-      createdAt: a.createdAt || new Date().toISOString()
-    });
-  });
-
-  // Gabungkan admin dari tabel admins Supabase
   const sb = getSupabaseClient();
-  if (sb) {
-    try {
-      const { data: dbAdmins } = await sb.from('admins').select('*');
-      if (Array.isArray(dbAdmins)) {
-        dbAdmins.forEach(da => {
-          const key = (da.username || String(da.id)).toLowerCase();
-          if (!map.has(key)) {
-            map.set(key, {
-              id: da.id,
-              email: da.email || `${da.username}@prossindo.com`,
-              username: da.username,
-              name: da.name || (da.username === 'admin' ? 'Super Admin' : da.username),
-              role: 'admin',
-              autoConfirmed: true,
-              createdAt: da.created_at || new Date().toISOString()
-            });
-          }
-        });
-      }
-    } catch (e) {}
+  if (!sb) {
+    return res.status(503).json({ success: false, message: 'Layanan database Supabase tidak tersedia di server.' });
   }
 
-  const sanitized = Array.from(map.values());
-  res.json({ success: true, admins: sanitized });
+  try {
+    const { data: dbAdmins, error } = await sb
+      .from('admins')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error('[AUTH] Gagal membaca tabel admins Supabase:', error.message);
+      return res.status(500).json({ success: false, message: 'Gagal memuat daftar admin dari database: ' + error.message });
+    }
+
+    const sanitized = (dbAdmins || []).map(a => {
+      const u = a.username || 'admin';
+      return {
+        id: a.id,
+        email: a.email || `${u.toLowerCase()}@prossindo.com`,
+        username: u,
+        name: a.name || (u.toLowerCase() === 'admin' ? 'Super Admin' : u),
+        role: a.role || 'admin',
+        autoConfirmed: true,
+        createdAt: a.created_at || new Date().toISOString()
+      };
+    });
+
+    res.json({ success: true, admins: sanitized });
+  } catch (err) {
+    console.error('Error in /api/admin/list:', err.message || err);
+    res.status(500).json({ success: false, message: 'Terjadi kesalahan saat memuat daftar admin.' });
+  }
 });
 
-// Endpoint untuk pendaftaran Admin Baru (auto-confirmed) secara aman tanpa logout admin saat ini
+// Endpoint untuk pendaftaran Admin Baru (auto-confirmed) secara langsung dan penuh ke database Supabase
 app.post('/api/admin/create-admin', async (req, res) => {
   try {
     const adminAuth = await verifyAdminAuth(req);
@@ -379,7 +560,7 @@ app.post('/api/admin/create-admin', async (req, res) => {
     const cleanEmail = email.trim().toLowerCase();
     const cleanUsername = (username || cleanEmail.split('@')[0]).trim().replace(/\s+/g, '_');
     const cleanName = (name || cleanUsername).trim();
-    const sha256Password = crypto.createHash('sha256').update(password).digest('hex');
+    const bcryptPasswordHash = await bcrypt.hash(password, 10);
 
     const sb = getSupabaseClient();
     if (!sb) {
@@ -397,7 +578,7 @@ app.post('/api/admin/create-admin', async (req, res) => {
       // Perbarui password hash jika admin dengan username ini sudah ada
       const { data: updated, error: updErr } = await sb
         .from('admins')
-        .update({ password_hash: sha256Password })
+        .update({ password_hash: bcryptPasswordHash })
         .eq('id', existingDbAdmins[0].id)
         .select();
 
@@ -406,14 +587,14 @@ app.post('/api/admin/create-admin', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Gagal memperbarui admin di database: ' + updErr.message });
       }
       dbAdminRecord = updated?.[0];
-      console.log(`[AUTH] Password hash admin "${cleanUsername}" berhasil diperbarui di tabel admins Supabase.`);
+      console.log(`[AUTH] Password hash admin "${cleanUsername}" berhasil diperbarui di tabel admins Supabase dengan bcrypt.`);
     } else {
-      // 2. Eksekusi INSERT ke tabel admins Supabase dengan enkripsi hash password SHA-256 yang valid
+      // 2. Eksekusi INSERT langsung ke tabel admins Supabase dengan hash bcrypt
       const { data: inserted, error: insErr } = await sb
         .from('admins')
         .insert([{
           username: cleanUsername,
-          password_hash: sha256Password
+          password_hash: bcryptPasswordHash
         }])
         .select();
 
@@ -422,35 +603,20 @@ app.post('/api/admin/create-admin', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Gagal menambahkan admin ke database: ' + insErr.message });
       }
       dbAdminRecord = inserted?.[0];
-      console.log(`[AUTH] Admin baru "${cleanUsername}" berhasil di-INSERT ke tabel admins Supabase:`, dbAdminRecord);
+      console.log(`[AUTH] Admin baru "${cleanUsername}" berhasil disimpan ke tabel admins Supabase:`, dbAdminRecord);
     }
 
-    // 3. Simpan juga ke admins.json lokal sebagai sinkronisasi
-    const currentAdmins = getAdminsFromFile();
-    const adminId = dbAdminRecord?.id || Date.now();
-    const existingLocalIdx = currentAdmins.findIndex(
-      a => a.email.toLowerCase() === cleanEmail || (a.username && a.username.toLowerCase() === cleanUsername.toLowerCase())
-    );
-
-    const localAdminEntry = {
-      id: adminId,
+    const adminEntry = {
+      id: dbAdminRecord?.id || Date.now(),
       email: cleanEmail,
       username: cleanUsername,
       name: cleanName,
       role: 'admin',
-      passwordHash: sha256Password,
       autoConfirmed: true,
       createdAt: dbAdminRecord?.created_at || new Date().toISOString()
     };
 
-    if (existingLocalIdx >= 0) {
-      currentAdmins[existingLocalIdx] = localAdminEntry;
-    } else {
-      currentAdmins.push(localAdminEntry);
-    }
-    saveAdminsToFile(currentAdmins);
-
-    // 4. Sinkronisasi opsional ke Supabase Auth jika Service Role Key tersedia
+    // 3. Sinkronisasi opsional ke Supabase Auth jika Service Role Key tersedia
     const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
     if (serviceRoleKey) {
       try {
@@ -465,7 +631,7 @@ app.post('/api/admin/create-admin', async (req, res) => {
             email: cleanEmail,
             password: password,
             email_confirm: true,
-            user_metadata: { role: 'admin', full_name: cleanName }
+            user_metadata: { role: 'admin', full_name: cleanName, username: cleanUsername }
           })
         });
       } catch (e) {}
@@ -473,16 +639,8 @@ app.post('/api/admin/create-admin', async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `Akun Super Admin baru "${cleanUsername}" (${cleanEmail}) berhasil didaftarkan dan tersimpan di database Supabase!`,
-      admin: {
-        id: localAdminEntry.id,
-        email: localAdminEntry.email,
-        username: localAdminEntry.username,
-        name: localAdminEntry.name,
-        role: 'admin',
-        autoConfirmed: true,
-        createdAt: localAdminEntry.createdAt
-      }
+      message: `Akun Super Admin baru "${cleanUsername}" (${cleanEmail}) berhasil didaftarkan dan tersimpan langsung di database Supabase!`,
+      admin: adminEntry
     });
   } catch (err) {
     console.error('Error saat create admin:', err.message || err);
@@ -493,119 +651,164 @@ app.post('/api/admin/create-admin', async (req, res) => {
   }
 });
 
-// Endpoint untuk verifikasi kredensial admin saat login langsung ke tabel admins Supabase
-app.post('/api/admin/verify-credentials', async (req, res) => {
-  const { emailOrUsername, password } = req.body || {};
+// Handler login admin terpusat dengan bcrypt.compare dan tabel admins Supabase
+async function handleAdminLogin(req, res) {
+  try {
+    const { emailOrUsername, email, username, password } = req.body || {};
+    const inputIdentifier = (emailOrUsername || email || username || '').trim();
 
-  if (!emailOrUsername || typeof emailOrUsername !== 'string' || !emailOrUsername.trim()) {
-    return res.status(401).json({ valid: false, message: 'Email atau username wajib diisi.' });
-  }
-
-  if (!password || typeof password !== 'string' || !password.trim()) {
-    return res.status(401).json({ valid: false, message: 'Password wajib diisi.' });
-  }
-
-  const cleanInput = emailOrUsername.trim().toLowerCase();
-  const inputSha256 = crypto.createHash('sha256').update(password).digest('hex');
-  const userCandidate = cleanInput.includes('@') ? cleanInput.split('@')[0] : cleanInput;
-
-  // 1. Validasi login admin langsung ke tabel admins di Supabase
-  const sb = getSupabaseClient();
-  if (sb) {
-    try {
-      let { data: dbAdmins } = await sb.from('admins').select('*').ilike('username', cleanInput);
-      if (!dbAdmins || dbAdmins.length === 0) {
-        if (cleanInput.includes('@')) {
-          const res2 = await sb.from('admins').select('*').ilike('username', userCandidate);
-          if (res2.data && res2.data.length > 0) {
-            dbAdmins = res2.data;
-          }
-        }
-      }
-
-      if (Array.isArray(dbAdmins) && dbAdmins.length > 0) {
-        const foundDbAdmin = dbAdmins[0];
-        const dbHash = (foundDbAdmin.password_hash || '').trim();
-
-        // Pencocokan hash SHA-256 password yang diinput dengan kolom password_hash
-        const isMatch = dbHash && (
-          dbHash.toLowerCase() === inputSha256.toLowerCase() ||
-          dbHash === hashPassword(password) ||
-          (foundDbAdmin.username === 'admin' && (password === 'admin' || password === 'admin123' || password === 'prossindo'))
-        );
-
-        if (isMatch) {
-          // Jika hash belum standar SHA-256 murni, perbarui langsung di tabel admins Supabase
-          if (dbHash.toLowerCase() !== inputSha256.toLowerCase()) {
-            try {
-              await sb.from('admins').update({ password_hash: inputSha256 }).eq('id', foundDbAdmin.id);
-              console.log(`[AUTH] Password hash admin ${foundDbAdmin.username} diperbarui ke standar SHA-256.`);
-            } catch(e) {}
-          }
-
-          const adminPayload = {
-            id: foundDbAdmin.id,
-            username: foundDbAdmin.username || 'admin',
-            email: foundDbAdmin.email || `${foundDbAdmin.username || 'admin'}@prossindo.com`,
-            name: foundDbAdmin.name || (foundDbAdmin.username === 'admin' ? 'Super Admin' : foundDbAdmin.username),
-            role: 'admin'
-          };
-          const sessionToken = generateSessionToken(adminPayload);
-          console.log(`[AUTH] Admin login berhasil via tabel Supabase admins: username=${foundDbAdmin.username}`);
-          return res.json({
-            valid: true,
-            admin: adminPayload,
-            token: sessionToken
-          });
-        } else if (dbHash) {
-          console.warn(`[AUTH] Password hash tidak cocok untuk admin Supabase: username=${foundDbAdmin.username}`);
-          return res.status(401).json({ valid: false, message: 'Password tidak cocok.' });
-        }
-      }
-    } catch (sbErr) {
-      console.warn('Peringatan saat validasi ke Supabase admins:', sbErr.message || sbErr);
+    if (!inputIdentifier) {
+      return res.status(400).json({ 
+        success: false, 
+        valid: false, 
+        message: 'Email atau username admin wajib diisi.' 
+      });
     }
+
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ 
+        success: false, 
+        valid: false, 
+        message: 'Password admin wajib diisi.' 
+      });
+    }
+
+    // Validasi login admin langsung ke database Supabase
+    const sb = getSupabaseClient();
+    if (!sb) {
+      return res.status(503).json({ 
+        success: false, 
+        valid: false, 
+        message: 'Layanan database Supabase tidak tersedia di server.' 
+      });
+    }
+
+    const cleanInput = inputIdentifier.toLowerCase();
+    const userCandidate = cleanInput.includes('@') ? cleanInput.split('@')[0] : cleanInput;
+
+    // Ambil data admin dari tabel admins di Supabase
+    const { data: dbAdmins, error: queryErr } = await sb
+      .from('admins')
+      .select('*');
+
+    if (queryErr || !Array.isArray(dbAdmins) || dbAdmins.length === 0) {
+      return res.status(401).json({ 
+        success: false, 
+        valid: false, 
+        message: 'Kredensial admin tidak ditemukan di database Supabase.' 
+      });
+    }
+
+    const foundDbAdmin = dbAdmins.find(a => {
+      const u = (a.username || '').toLowerCase();
+      const e = (a.email || '').toLowerCase();
+      return (
+        (e && e === cleanInput) ||
+        (u && (u === cleanInput || u === userCandidate))
+      );
+    });
+
+    if (!foundDbAdmin || !foundDbAdmin.password_hash) {
+      return res.status(401).json({ 
+        success: false, 
+        valid: false, 
+        message: 'Kredensial admin tidak ditemukan.' 
+      });
+    }
+
+    // Gunakan bcrypt.compare untuk mencocokkan password input dengan password_hash di database Supabase
+    const isMatch = await bcrypt.compare(password, foundDbAdmin.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ 
+        success: false, 
+        valid: false, 
+        message: 'Password tidak cocok.' 
+      });
+    }
+
+    // Pastikan akun pengguna memiliki role = 'admin' pada tabel admins
+    const roleValue = foundDbAdmin.role || 'admin';
+    if (roleValue !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        valid: false, 
+        message: 'Akses ditolak: Akun tidak memiliki hak akses role admin.' 
+      });
+    }
+
+    const adminEmail = foundDbAdmin.email || `${foundDbAdmin.username}@prossindo.com`;
+    const adminPayload = {
+      id: foundDbAdmin.id,
+      username: foundDbAdmin.username || 'admin',
+      email: adminEmail,
+      name: foundDbAdmin.name || (foundDbAdmin.username === 'admin' ? 'Super Admin' : foundDbAdmin.username),
+      role: 'admin'
+    };
+
+    // Sinkronisasi/akuisisi token JWT Supabase Auth resmi
+    let token = null;
+    try {
+      const authRes = await sb.auth.signInWithPassword({
+        email: adminEmail,
+        password: password
+      });
+      if (authRes.data?.session?.access_token) {
+        token = authRes.data.session.access_token;
+      }
+    } catch (authErr) {
+      console.warn('[AUTH] Notice saat sign in Supabase Auth:', authErr.message || authErr);
+    }
+
+    if (!token) {
+      const { serviceRoleKey } = getSupabaseConfig();
+      if (serviceRoleKey) {
+        try {
+          await sb.auth.admin.createUser({
+            email: adminEmail,
+            password: password,
+            email_confirm: true,
+            user_metadata: { role: 'admin', username: foundDbAdmin.username, name: adminPayload.name }
+          });
+          const retryAuth = await sb.auth.signInWithPassword({
+            email: adminEmail,
+            password: password
+          });
+          if (retryAuth.data?.session?.access_token) {
+            token = retryAuth.data.session.access_token;
+          }
+        } catch (syncErr) {
+          // Abaikan jika user sudah terdaftar di Supabase Auth
+        }
+      }
+    }
+
+    // Jika Supabase Auth JWT belum tersedia, gunakan server session token
+    if (!token) {
+      token = generateSessionToken(adminPayload);
+    }
+
+    console.log(`[AUTH] Admin login berhasil via bcrypt di tabel admins Supabase: username=${foundDbAdmin.username}`);
+    return res.json({
+      success: true,
+      valid: true,
+      message: 'Login admin berhasil.',
+      admin: adminPayload,
+      user: adminPayload,
+      token: token
+    });
+  } catch (err) {
+    console.error('[AUTH] Kesalahan pada endpoint login admin:', err.message || err);
+    return res.status(500).json({ 
+      success: false, 
+      valid: false, 
+      message: 'Terjadi kesalahan pada server saat autentikasi admin: ' + (err.message || 'Kesalahan server') 
+    });
   }
+}
 
-  // 2. Fallback jika admin terdaftar di admins.json lokal
-  const admins = getAdminsFromFile();
-  const foundAdmin = admins.find(a => 
-    (a.email && String(a.email).toLowerCase() === cleanInput) || 
-    (a.username && String(a.username).toLowerCase() === cleanInput) ||
-    (cleanInput.includes('@') && a.username && String(a.username).toLowerCase() === userCandidate)
-  );
-
-  if (!foundAdmin) {
-    return res.status(401).json({ valid: false, message: 'Kredensial admin tidak ditemukan.' });
-  }
-
-  const saltHash = hashPassword(password);
-  const isValidLocal = foundAdmin.passwordHash && (
-    foundAdmin.passwordHash.toLowerCase() === inputSha256.toLowerCase() ||
-    foundAdmin.passwordHash === saltHash ||
-    password === 'admin' || password === 'admin123'
-  );
-
-  if (!isValidLocal) {
-    return res.status(401).json({ valid: false, message: 'Password tidak cocok.' });
-  }
-
-  const adminPayload = {
-    id: foundAdmin.id,
-    email: foundAdmin.email || `${foundAdmin.username}@prossindo.com`,
-    username: foundAdmin.username,
-    name: foundAdmin.name || foundAdmin.username,
-    role: 'admin'
-  };
-
-  const sessionToken = generateSessionToken(adminPayload);
-
-  return res.json({
-    valid: true,
-    admin: adminPayload,
-    token: sessionToken
-  });
-});
+// Endpoint login admin dengan proteksi Rate Limiter (maksimal 5 percobaan per 15 menit)
+app.post('/api/admin/login', adminLoginLimiter, handleAdminLogin);
+app.post('/api/admin/verify-credentials', adminLoginLimiter, handleAdminLogin);
 
 // Endpoint untuk login member & menyimpan data ke tabel members Supabase secara nyata
 app.post('/api/member/login', async (req, res) => {
@@ -691,7 +894,7 @@ app.post('/api/member/login', async (req, res) => {
   }
 });
 
-// Endpoint untuk menghapus admin (Hanya dapat diakses oleh admin aktif)
+// Endpoint untuk menghapus admin (Hanya dapat diakses oleh admin aktif, langsung dari tabel admins Supabase)
 app.delete('/api/admin/:id', async (req, res) => {
   try {
     const adminAuth = await verifyAdminAuth(req);
@@ -703,42 +906,103 @@ app.delete('/api/admin/:id', async (req, res) => {
     const cleanId = String(id).trim();
 
     // Lindungi akun superadmin utama agar tidak terhapus
-    if (cleanId.toLowerCase() === 'admin') {
+    if (cleanId.toLowerCase() === 'admin' || cleanId === '7') {
       return res.status(400).json({ success: false, message: 'Akun Super Admin utama tidak dapat dihapus.' });
     }
 
-    let admins = getAdminsFromFile();
-    const initialLength = admins.length;
-    admins = admins.filter(a => 
-      String(a.id) !== cleanId && 
-      String(a.username).toLowerCase() !== cleanId.toLowerCase() && 
-      String(a.email).toLowerCase() !== cleanId.toLowerCase()
-    );
-
-    if (admins.length !== initialLength) {
-      saveAdminsToFile(admins);
+    const sb = getSupabaseClient();
+    if (!sb) {
+      return res.status(503).json({ success: false, message: 'Layanan database Supabase tidak tersedia di server.' });
     }
 
-    // Hapus juga secara permanen dari tabel admins di Supabase
+    const numId = parseInt(cleanId, 10);
+    let deleteQuery = sb.from('admins').delete();
+    if (!isNaN(numId) && String(numId) === cleanId) {
+      deleteQuery = deleteQuery.eq('id', numId);
+    } else {
+      deleteQuery = deleteQuery.ilike('username', cleanId);
+    }
+
+    const { error: delErr } = await deleteQuery;
+    if (delErr) {
+      console.error('[ADMIN] Gagal menghapus admin dari database Supabase:', delErr.message);
+      return res.status(500).json({ success: false, message: 'Gagal menghapus admin dari database: ' + delErr.message });
+    }
+
+    console.log(`[AUTH] Admin "${cleanId}" berhasil dihapus dari tabel admins Supabase.`);
+    return res.json({ success: true, message: 'Admin berhasil dihapus dari database.' });
+  } catch (err) {
+    console.error('Error saat menghapus admin:', err.message || err);
+    return res.status(500).json({ success: false, message: 'Gagal menghapus admin: ' + (err.message || 'Kesalahan server') });
+  }
+});
+
+// ==========================================
+// UPLOAD GAMBAR FREELANCER (SUPABASE STORAGE)
+// Bucket: 'freelancer-images'
+// ==========================================
+
+app.post('/api/upload/freelancer-image', async (req, res) => {
+  try {
+    const auth = await verifyAdminAuth(req);
+    if (!auth) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Akses ditolak: Hanya Super Admin yang berhak mengunggah gambar.' 
+      });
+    }
+
     const sb = getSupabaseClient();
-    if (sb) {
-      try {
-        const numId = parseInt(cleanId, 10);
-        if (!isNaN(numId) && String(numId) === cleanId) {
-          await sb.from('admins').delete().eq('id', numId);
-        } else {
-          await sb.from('admins').delete().ilike('username', cleanId);
-        }
-        console.log(`[AUTH] Admin ${cleanId} dihapus dari tabel admins Supabase.`);
-      } catch (sbErr) {
-        console.warn('Gagal menghapus admin dari Supabase admins table:', sbErr.message || sbErr);
+    if (!sb) {
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Layanan database Supabase tidak tersedia.' 
+      });
+    }
+
+    const { image, images, filename } = req.body || {};
+    const inputList = Array.isArray(images) ? images : (image ? [image] : []);
+
+    if (inputList.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Harap sertakan data gambar untuk diunggah.' 
+      });
+    }
+
+    const uploadedUrls = [];
+    for (const item of inputList) {
+      const rawData = (typeof item === 'object' && item !== null) ? (item.image || item.data) : item;
+      if (!rawData || typeof rawData !== 'string') continue;
+
+      if (rawData.startsWith('http://') || rawData.startsWith('https://')) {
+        uploadedUrls.push(rawData);
+      } else {
+        const customName = (typeof item === 'object' && item !== null && item.name) ? item.name : filename;
+        const pubUrl = await uploadImageToSupabaseStorage(rawData, sb, customName);
+        if (pubUrl) uploadedUrls.push(pubUrl);
       }
     }
 
-    res.json({ success: true, message: 'Admin berhasil dihapus.' });
+    if (uploadedUrls.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Format gambar tidak valid atau gagal diproses.' 
+      });
+    }
+
+    return res.json({
+      success: true,
+      url: uploadedUrls[0],
+      urls: uploadedUrls,
+      message: 'Gambar berhasil diunggah ke Supabase Storage (bucket: freelancer-images).'
+    });
   } catch (err) {
-    console.error('Error saat menghapus admin:', err.message || err);
-    res.status(500).json({ success: false, message: 'Gagal menghapus admin.' });
+    console.error('[STORAGE] Error upload freelancer image:', err.message || err);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengunggah gambar ke Supabase Storage: ' + (err.message || 'Kesalahan server')
+    });
   }
 });
 
@@ -747,6 +1011,29 @@ app.delete('/api/admin/:id', async (req, res) => {
 // ==========================================
 
 const ALLOWED_TABLES = new Set(['freelancers', 'members', 'admin_config', 'admins', 'wa_leads']);
+
+const FREELANCERS_FILE = path.join(__dirname, 'freelancers.json');
+
+function getFreelancersFromFile() {
+  try {
+    if (fs.existsSync(FREELANCERS_FILE)) {
+      const data = fs.readFileSync(FREELANCERS_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading freelancers.json:', e.message || e);
+  }
+  return [];
+}
+
+function saveFreelancersToFile(items) {
+  try {
+    fs.writeFileSync(FREELANCERS_FILE, JSON.stringify(items, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Error saving freelancers.json:', e.message || e);
+  }
+}
 
 function isValidTable(table) {
   return typeof table === 'string' && ALLOWED_TABLES.has(table.toLowerCase());
@@ -772,6 +1059,9 @@ async function handleDbSelect(req, res) {
 
     const sb = getSupabaseClient();
     if (!sb) {
+      if (cleanTable === 'freelancers') {
+        return res.json({ data: getFreelancersFromFile(), error: null });
+      }
       return res.status(503).json({ data: null, error: { message: 'Layanan database Supabase tidak tersedia di server.' } });
     }
 
@@ -817,7 +1107,18 @@ async function handleDbSelect(req, res) {
 
     const { data, error } = await query;
     if (error) {
+      if (cleanTable === 'freelancers') {
+        const localList = getFreelancersFromFile();
+        if (localList.length > 0) {
+          return res.json({ data: localList, error: null });
+        }
+      }
       return res.status(200).json({ data: null, error: { message: error.message, code: error.code } });
+    }
+
+    if (cleanTable === 'freelancers' && (!data || data.length === 0)) {
+      const localList = getFreelancersFromFile();
+      return res.json({ data: localList, error: null });
     }
 
     return res.json({ data: data || [], error: null });
@@ -870,20 +1171,22 @@ async function handleDbInsert(req, res) {
         reference: String(r.reference || 'Katalog Talent').trim()
       }));
     } else if (cleanTable === 'freelancers') {
-      records = records.map(r => {
+      records = await Promise.all(records.map(async r => {
         let imgs = r.images;
         if (typeof imgs === 'string') {
           try { imgs = JSON.parse(imgs); } catch(e) { imgs = [imgs]; }
         }
+        const imgList = Array.isArray(imgs) ? imgs : (imgs ? [imgs] : []);
+        const storageUrls = await processFreelancerImagesForStorage(imgList, sb);
         return {
           name: String(r.name || 'Tanpa Nama').trim(),
           location: String(r.location || '-').trim(),
           status: String(r.status || 'Available').trim(),
           service: String(r.service || '-').trim(),
           description: String(r.description || '').trim(),
-          images: Array.isArray(imgs) ? imgs : (imgs ? [imgs] : [])
+          images: storageUrls
         };
-      });
+      }));
     } else if (cleanTable === 'members') {
       records = records.map(r => ({
         username: String(r.username || '').trim(),
@@ -909,7 +1212,24 @@ async function handleDbInsert(req, res) {
     }
 
     if (error) {
+      if (cleanTable === 'freelancers') {
+        const existing = getFreelancersFromFile();
+        const nextId = existing.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
+        const newItems = records.map((r, i) => ({
+          id: nextId + i,
+          ...r,
+          created_at: new Date().toISOString()
+        }));
+        saveFreelancersToFile([...existing, ...newItems]);
+        return res.json({ data: newItems, error: null });
+      }
       return res.status(400).json({ data: null, error: { message: error.message, code: error.code } });
+    }
+
+    if (cleanTable === 'freelancers') {
+      const existing = getFreelancersFromFile();
+      const newItems = (data && Array.isArray(data)) ? data : records;
+      saveFreelancersToFile([...existing, ...newItems]);
     }
 
     return res.json({ data, error: null });
@@ -919,8 +1239,8 @@ async function handleDbInsert(req, res) {
   }
 }
 
-app.post('/api/db/data', handleDbInsert);
-app.post('/api/db/:table', handleDbInsert);
+app.post('/api/db/data', checkWaLeadsRateLimit, handleDbInsert);
+app.post('/api/db/:table', checkWaLeadsRateLimit, handleDbInsert);
 
 // 3. PUT /api/db/data & PUT /api/db/:table
 async function handleDbUpdate(req, res) {
@@ -946,7 +1266,7 @@ async function handleDbUpdate(req, res) {
     const match = req.body.match || {};
     const upsert = req.body.upsert === true;
 
-    // Sanitasi field updateData untuk freelancers
+    // Sanitasi field updateData untuk freelancers dan simpan ke Supabase Storage
     if (cleanTable === 'freelancers' && updateData && typeof updateData === 'object') {
       if (updateData.images) {
         if (typeof updateData.images === 'string') {
@@ -955,6 +1275,7 @@ async function handleDbUpdate(req, res) {
         if (!Array.isArray(updateData.images)) {
           updateData.images = [updateData.images];
         }
+        updateData.images = await processFreelancerImagesForStorage(updateData.images, sb);
       }
     }
 
@@ -1035,7 +1356,23 @@ async function handleDbDelete(req, res) {
 
     const { error } = await query;
     if (error) {
+      if (cleanTable === 'freelancers') {
+        let list = getFreelancersFromFile();
+        if (id) {
+          list = list.filter(item => String(item.id) !== String(id));
+        }
+        saveFreelancersToFile(list);
+        return res.json({ success: true, error: null });
+      }
       return res.status(400).json({ success: false, error: { message: error.message, code: error.code } });
+    }
+
+    if (cleanTable === 'freelancers') {
+      let list = getFreelancersFromFile();
+      if (id) {
+        list = list.filter(item => String(item.id) !== String(id));
+      }
+      saveFreelancersToFile(list);
     }
 
     return res.json({ success: true, error: null });
@@ -1048,19 +1385,65 @@ async function handleDbDelete(req, res) {
 app.delete('/api/db/data', handleDbDelete);
 app.delete('/api/db/:table', handleDbDelete);
 
-// HANYA menyajikan index.html pada root route (/)
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// ==========================================
+// VITE DEV & STATIC PRODUCTION SERVING
+// ==========================================
 
-// Fallback route untuk Single Page Application
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API endpoint not found' });
+async function startServer() {
+  const isProd = process.env.NODE_ENV === 'production';
+  let vite = null;
+
+  if (!isProd && fs.existsSync(path.join(__dirname, 'vite.config.ts'))) {
+    try {
+      const { createServer: createViteServer } = await import('vite');
+      vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+      console.log('[VITE] Middleware Vite berhasil diaktifkan untuk mode pengembangan.');
+    } catch (err) {
+      console.warn('[VITE] Vite middleware tidak aktif, menggunakan serving statis:', err.message);
+    }
   }
-  res.sendFile(path.join(__dirname, 'index.html'));
+
+  // Melayani file build statis jika direktori dist tersedia
+  if (fs.existsSync(path.join(__dirname, 'dist'))) {
+    app.use(express.static(path.join(__dirname, 'dist')));
+  }
+
+  // Fallback route untuk Single Page Application
+  app.get('*', async (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    try {
+      if (vite) {
+        let template = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
+        template = await vite.transformIndexHtml(req.originalUrl, template);
+        return res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      }
+      if (fs.existsSync(path.join(__dirname, 'dist', 'index.html'))) {
+        return res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+      }
+      res.sendFile(path.join(__dirname, 'index.html'));
+    } catch (err) {
+      if (vite) vite.ssrFixStacktrace(err);
+      next(err);
+    }
+  });
+
+  // Hanya dengarkan port jika aplikasi berjalan di lingkungan lokal (bukan production/serverless)
+  if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running at http://0.0.0.0:${PORT}`);
+    });
+  }
+}
+
+startServer().catch(err => {
+  console.error('Fatal server startup error:', err);
+  process.exit(1);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running at http://0.0.0.0:${PORT}`);
-});
+export default app;
