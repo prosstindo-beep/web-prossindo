@@ -16,7 +16,8 @@ import {
   fetchAdminsApi, 
   createAdminApi, 
   deleteAdminApi, 
-  uploadFreelancerImagesToStorage 
+  uploadFreelancerImagesToStorage,
+  verifyAuthApi
 } from './api';
 import { ToastContainer } from './components/Toast';
 import { Navbar } from './components/Navbar';
@@ -122,39 +123,78 @@ export default function App() {
     // 2. Freelancers
     loadFreelancers();
 
-    // 3. Check existing user session
-    try {
-      const savedUser = localStorage.getItem('currentUser');
-      const savedAdminSession = localStorage.getItem('supabase_admin_session');
+    // 3. Check and verify existing user session
+    const restoreSession = async () => {
+      try {
+        const savedUser = localStorage.getItem('currentUser');
+        const savedAdminSession = localStorage.getItem('supabase_admin_session');
 
-      if (savedAdminSession) {
-        const parsed = JSON.parse(savedAdminSession);
-        if (parsed && (parsed.access_token || parsed.token)) {
-          const email = parsed.user?.email || 'admin@prossindo.com';
-          const name = parsed.user?.name || parsed.user?.username || email.split('@')[0];
-          const adminUser: CurrentUser = {
-            role: 'admin',
-            email,
-            username: parsed.user?.username || email.split('@')[0],
-            name
-          };
-          setCurrentUser(adminUser);
-          setCurrentView('catalog');
-          loadAdminData();
-          return;
-        }
-      }
+        if (savedAdminSession) {
+          let token = '';
+          let parsed: any = null;
+          try {
+            parsed = JSON.parse(savedAdminSession);
+            token = parsed?.access_token || parsed?.token || '';
+          } catch (e) {
+            token = '';
+          }
 
-      if (savedUser) {
-        const parsedUser: CurrentUser = JSON.parse(savedUser);
-        if (parsedUser && parsedUser.username) {
-          setCurrentUser(parsedUser);
-          setCurrentView('catalog');
+          if (token) {
+            // Verifikasi token terlebih dahulu ke POST /api/auth/verify
+            const verifyRes = await verifyAuthApi(token);
+            if (verifyRes.authenticated && verifyRes.role === 'admin') {
+              const serverUser = verifyRes.user || parsed?.user || {};
+              const email = serverUser.email || 'admin@prossindo.com';
+              const name = serverUser.name || serverUser.username || email.split('@')[0];
+              const adminUser: CurrentUser = {
+                role: 'admin',
+                email,
+                username: serverUser.username || email.split('@')[0],
+                name
+              };
+              setCurrentUser(adminUser);
+              localStorage.setItem('currentUser', JSON.stringify(adminUser));
+              setCurrentView('catalog');
+              loadAdminData();
+              return;
+            } else {
+              // Jika verifikasi gagal / token invalid, hapus sesi dari localStorage
+              console.warn('[AUTH] Token sesi admin tidak valid atau kedaluwarsa, menghapus sesi dari localStorage.');
+              localStorage.removeItem('supabase_admin_session');
+              if (savedUser) {
+                try {
+                  const pUser = JSON.parse(savedUser);
+                  if (pUser?.role === 'admin') {
+                    localStorage.removeItem('currentUser');
+                  }
+                } catch (e) {}
+              }
+            }
+          } else {
+            localStorage.removeItem('supabase_admin_session');
+          }
         }
+
+        // Restore sesi member jika ada
+        const currentSavedUser = localStorage.getItem('currentUser');
+        if (currentSavedUser) {
+          const parsedUser: CurrentUser = JSON.parse(currentSavedUser);
+          if (parsedUser && parsedUser.username && parsedUser.role === 'member') {
+            setCurrentUser(parsedUser);
+            setCurrentView('catalog');
+          } else if (parsedUser && parsedUser.role === 'admin') {
+            // Admin tanpa token terverifikasi tidak diizinkan masuk
+            localStorage.removeItem('currentUser');
+            setCurrentUser(null);
+            setCurrentView('login');
+          }
+        }
+      } catch (e) {
+        console.warn('Error reading stored session:', e);
       }
-    } catch (e) {
-      console.warn('Error reading stored session:', e);
-    }
+    };
+
+    restoreSession();
   }, [loadFreelancers, loadAdminData]);
 
   // Handle Member Login
@@ -487,6 +527,7 @@ export default function App() {
             onDeleteLead={handleDeleteLead}
             onOpenEditWaModal={() => setIsEditWaModalOpen(true)}
             onRefreshLeads={loadAdminData}
+            onShowToast={addToast}
           />
         )}
       </main>
@@ -494,14 +535,11 @@ export default function App() {
       {/* Footer */}
       {currentView !== 'login' && (
         <footer className="border-t border-slate-200/80 bg-white py-6 mt-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center text-xs text-slate-500">
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-800">PROSS INDO</span>
               <span>&bull;</span>
-              <span>Direktori Talent & Partner Bisnis Terkurasi</span>
-            </div>
-            <div>
-              <span>Penyimpanan Foto Supabase Storage &amp; Database Real-time</span>
+              <span>Portal Talent & Partner Terbaik</span>
             </div>
           </div>
         </footer>

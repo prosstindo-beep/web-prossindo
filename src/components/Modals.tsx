@@ -64,7 +64,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           </div>
           <div>
             <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Super Admin Portal</h3>
-            <p className="text-xs text-slate-500">Masuk untuk mengelola talenta & database</p>
           </div>
         </div>
 
@@ -78,7 +77,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
               required
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="admin@prossindo.com atau admin"
+              placeholder="Masukkan email/username"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
             />
           </div>
@@ -180,7 +179,7 @@ export const ContactWaModal: React.FC<ContactWaModalProps> = ({
       setSubmitting(false);
     }
 
-    const message = `Halo Admin PROSS INDO,\n\nSaya *${finalMember}* ingin berkonsultasi mengenai talenta berikut:\n- Nama: *${talent.name}*\n- Layanan: ${talent.service}\n- Lokasi: ${talent.location}\n- Catatan/Kebutuhan: ${finalNote}\n\nMohon info ketersediaan dan proses kerjasamanya. Terima kasih!`;
+    const message = `Halo Admin,\n\nSaya *${finalMember}* ingin Order Talent berikut:\n- Nama: ${talent.name || '-'}\n- Layanan: ${talent.service || '-'}\n- Lokasi: ${talent.location || '-'}\n- Catatan/Kebutuhan: ${note.trim()}\n\nTerima kasih!`;
     const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(message)}`;
     
     window.open(waUrl, '_blank', 'noopener,noreferrer');
@@ -207,7 +206,6 @@ export const ContactWaModal: React.FC<ContactWaModalProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900">Hubungi Admin via WhatsApp</h3>
-            <p className="text-xs text-slate-500">Konsultasikan kebutuhan talenta freelance Anda</p>
           </div>
         </div>
 
@@ -248,13 +246,14 @@ export const ContactWaModal: React.FC<ContactWaModalProps> = ({
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Catatan Kebutuhan / Referensi Proyek
+              CATATAN KETUBUHAN/REFERENSI
             </label>
             <textarea
               rows={3}
+              required
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Contoh: Butuh jasa desain logo untuk startup, deadline 1 minggu."
+              placeholder=""
               className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm resize-none"
             />
           </div>
@@ -273,7 +272,7 @@ export const ContactWaModal: React.FC<ContactWaModalProps> = ({
               ) : (
                 <>
                   <MessageCircle className="w-5 h-5" />
-                  <span>Lanjutkan ke WhatsApp (+{cleanWa})</span>
+                  <span>Hubungi Admin</span>
                   <ExternalLink className="w-4 h-4 ml-1 opacity-80" />
                 </>
               )}

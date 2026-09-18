@@ -1,13 +1,21 @@
-import { createClient } from '@supabase/supabase-js';
 import { AdminAccount, AdminSession, Freelancer, Member, WaLead } from './types';
 
-// Inisialisasi Supabase Client menggunakan Environment Variables Vite
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+function getApiBaseUrl(): string {
+  const envBase = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
+  // Cegah pengiriman request ke domain Supabase jika VITE_API_BASE_URL salah dikonfigurasi
+  if (!envBase || envBase.includes('supabase.co') || envBase.includes('your-project')) {
+    return '';
+  }
+  return envBase;
+}
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const API_BASE = getApiBaseUrl();
 
-function getAuthToken(): string {
+// ==========================================
+// TOKEN & AUTH HEADERS HELPER
+// ==========================================
+
+export function getAuthToken(): string {
   try {
     const raw = localStorage.getItem('supabase_admin_session');
     if (raw) {
@@ -25,263 +33,499 @@ export function getAuthHeaders(): Record<string, string> {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
-// Database Proxy langsung menggunakan Supabase Client
+// ==========================================
+// TOKEN VERIFICATION API (SESSION RESTORE)
+// ==========================================
+
+export async function verifyAuthApi(customToken?: string): Promise<{
+  authenticated: boolean;
+  role?: string;
+  user?: any;
+  message?: string;
+}> {
+  const token = customToken || getAuthToken();
+  if (!token) {
+    return { authenticated: false, message: 'Token otentikasi tidak ditemukan.' };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ token })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.authenticated === true) {
+      return {
+        authenticated: true,
+        role: data.role || data.user?.role || 'admin',
+        user: data.user
+      };
+    }
+
+    return {
+      authenticated: false,
+      message: data.message || 'Sesi otentikasi tidak valid atau telah kedaluwarsa.'
+    };
+  } catch (err: any) {
+    return {
+      authenticated: false,
+      message: err.message || 'Gagal menghubungi server untuk verifikasi otentikasi.'
+    };
+  }
+}
+
+// ==========================================
+// BACKEND DATABASE PROXY (/api/db/:table)
+// ==========================================
+
+export interface DbSelectOptions {
+  select?: string;
+  order?: string;
+  ascending?: boolean;
+  limit?: number;
+  single?: boolean;
+  maybeSingle?: boolean;
+  filterField?: string;
+  filterValue?: any;
+  ilike?: boolean;
+}
+
 export const dbProxy = {
-  async select<T = any>(table: string, options: {
-    select?: string;
-    order?: string;
-    ascending?: boolean;
-    limit?: number;
-    single?: boolean;
-    maybeSingle?: boolean;
-    filterField?: string;
-    filterValue?: any;
-    ilike?: boolean;
-  } = {}): Promise<{ data: T[] | T | null; error: { message: string } | null }> {
+  async select<T = any>(
+    table: string,
+    options: DbSelectOptions = {}
+  ): Promise<{ data: T[] | T | null; error: { message: string } | null }> {
     try {
-      let query: any = supabase.from(table).select(options.select || '*');
-
+      const params = new URLSearchParams();
+      if (options.select) params.append('select', options.select);
+      if (options.order) params.append('order', options.order);
+      if (options.ascending !== undefined) params.append('ascending', String(options.ascending));
+      if (options.limit !== undefined) params.append('limit', String(options.limit));
+      if (options.single) params.append('single', 'true');
+      if (options.maybeSingle) params.append('maybeSingle', 'true');
       if (options.filterField && options.filterValue !== undefined) {
-        if (options.ilike) {
-          query = query.ilike(options.filterField, `%${options.filterValue}%`);
-        } else {
-          query = query.eq(options.filterField, options.filterValue);
-        }
+        params.append('filterField', options.filterField);
+        params.append('filterValue', String(options.filterValue));
       }
+      if (options.ilike) params.append('ilike', 'true');
 
-      if (options.order) {
-        query = query.order(options.order, { ascending: options.ascending ?? true });
-      }
+      const queryString = params.toString();
+      const url = `${API_BASE}/api/db/${encodeURIComponent(table)}${queryString ? `?${queryString}` : ''}`;
 
-      if (options.limit) {
-        query = query.limit(options.limit);
-      }
-
-      if (options.single) {
-        const { data, error } = await query.single();
-        return { data, error: error ? { message: error.message } : null };
-      }
-
-      if (options.maybeSingle) {
-        const { data, error } = await query.maybeSingle();
-        return { data, error: error ? { message: error.message } : null };
-      }
-
-      const { data, error } = await query;
-      return { data, error: error ? { message: error.message } : null };
-    } catch (err: any) {
-      return { data: null, error: { message: err.message || 'Gagal terhubung ke Supabase' } };
-    }
-  },
-
-  async insert<T = any>(table: string, records: any | any[]): Promise<{ data: T | T[] | null; error: { message: string } | null }> {
-    try {
-      const payload = Array.isArray(records) ? records : [records];
-      const { data, error } = await supabase.from(table).insert(payload).select();
-      return { data: Array.isArray(records) ? data : (data ? data[0] : null), error: error ? { message: error.message } : null };
-    } catch (err: any) {
-      return { data: null, error: { message: err.message || 'Gagal menyimpan data' } };
-    }
-  },
-
-  async update<T = any>(table: string, data: any, match: Record<string, any>, { ilike = false } = {}): Promise<{ data: T | T[] | null; error: { message: string } | null }> {
-    try {
-      let query: any = supabase.from(table).update(data);
-      Object.entries(match).forEach(([k, v]) => {
-        if (ilike) {
-          query = query.ilike(k, `%${v}%`);
-        } else {
-          query = query.eq(k, v);
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...getAuthHeaders()
         }
       });
-      const { data: updated, error } = await query.select();
-      return { data: updated, error: error ? { message: error.message } : null };
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok && !json.data && json.error) {
+        return { data: null, error: json.error };
+      }
+      return {
+        data: json.data !== undefined ? json.data : null,
+        error: json.error || null
+      };
     } catch (err: any) {
-      return { data: null, error: { message: err.message || 'Gagal memperbarui data' } };
+      console.error(`[dbProxy.select] Error query ke tabel ${table}:`, err);
+      return { data: null, error: { message: err.message || 'Network error' } };
     }
   },
 
-  async delete(table: string, match: Record<string, any>): Promise<{ success: boolean; error: { message: string } | null }> {
+  async insert<T = any>(
+    table: string,
+    records: any | any[]
+  ): Promise<{ data: T | T[] | null; error: { message: string } | null }> {
     try {
-      let query: any = supabase.from(table).delete();
-      Object.entries(match).forEach(([k, v]) => {
-        query = query.eq(k, v);
+      const url = `${API_BASE}/api/db/${encodeURIComponent(table)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ data: records })
       });
-      const { error } = await query;
-      return { success: !error, error: error ? { message: error.message } : null };
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok && json.error) {
+        return { data: null, error: json.error };
+      }
+      return {
+        data: json.data !== undefined ? json.data : null,
+        error: json.error || null
+      };
     } catch (err: any) {
-      return { success: false, error: { message: err.message || 'Gagal menghapus data' } };
+      console.error(`[dbProxy.insert] Error insert ke tabel ${table}:`, err);
+      return { data: null, error: { message: err.message || 'Network error' } };
+    }
+  },
+
+  async update<T = any>(
+    table: string,
+    data: any,
+    match: Record<string, any>,
+    options: { ilike?: boolean; upsert?: boolean } = {}
+  ): Promise<{ data: T | T[] | null; error: { message: string } | null }> {
+    try {
+      const url = `${API_BASE}/api/db/${encodeURIComponent(table)}`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          data,
+          match,
+          ilike: options.ilike === true,
+          upsert: options.upsert === true
+        })
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok && json.error) {
+        return { data: null, error: json.error };
+      }
+      return {
+        data: json.data !== undefined ? json.data : null,
+        error: json.error || null
+      };
+    } catch (err: any) {
+      console.error(`[dbProxy.update] Error update ke tabel ${table}:`, err);
+      return { data: null, error: { message: err.message || 'Network error' } };
+    }
+  },
+
+  async delete(
+    table: string,
+    match: Record<string, any>
+  ): Promise<{ success: boolean; error: { message: string } | null }> {
+    try {
+      let url = `${API_BASE}/api/db/${encodeURIComponent(table)}`;
+      if (match.id !== undefined) {
+        url += `?id=${encodeURIComponent(match.id)}`;
+      }
+      if (match.username !== undefined) {
+        url += `${url.includes('?') ? '&' : '?'}username=${encodeURIComponent(match.username)}`;
+      }
+
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ match })
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok && json.error) {
+        return { success: false, error: json.error };
+      }
+      return {
+        success: json.success !== false,
+        error: json.error || null
+      };
+    } catch (err: any) {
+      console.error(`[dbProxy.delete] Error delete di tabel ${table}:`, err);
+      return { success: false, error: { message: err.message || 'Network error' } };
     }
   }
 };
 
-// WhatsApp Config API
+// ==========================================
+// WHATSAPP CONFIG API (/api/config/wa)
+// ==========================================
+
 export async function getWaConfig(): Promise<string> {
   try {
-    const { data } = await supabase.from('config').select('value').eq('key', 'wa_number').maybeSingle();
-    if (data?.value) return data.value;
-  } catch (e) {
-    // fallback
+    const res = await fetch(`${API_BASE}/api/config/wa`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.wa_number) {
+        return String(data.wa_number).trim();
+      }
+    }
+  } catch (err) {
+    console.error('[CONFIG WA] Gagal memuat nomor WhatsApp dari backend:', err);
   }
-  return localStorage.getItem('adminWa') || '6285111029242';
+  return '6285111029242';
 }
 
 export async function saveWaConfig(waNumber: string): Promise<boolean> {
+  const clean = String(waNumber).replace(/[^0-9]/g, '');
+  if (clean.length < 8) return false;
+
   try {
-    localStorage.setItem('adminWa', waNumber);
-    const { error } = await supabase.from('config').upsert({ key: 'wa_number', value: waNumber }, { onConflict: 'key' });
-    return !error;
-  } catch (e) {
+    const res = await fetch(`${API_BASE}/api/config/wa`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({ wa_number: clean })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    return res.ok && data.success === true;
+  } catch (err) {
+    console.error('[CONFIG WA] Gagal menyimpan nomor WhatsApp ke backend:', err);
     return false;
   }
 }
 
-// Upload Gambar Freelancer langsung ke Supabase Storage (Bucket: 'freelancer-images')
+// ==========================================
+// UPLOAD GAMBAR FREELANCER (/api/upload/freelancer-image)
+// ==========================================
+
 export async function uploadFreelancerImagesToStorage(
   images: Array<{ image: string; name?: string }>
 ): Promise<{ success: boolean; urls: string[]; message?: string }> {
   try {
-    const urls: string[] = [];
-    for (let i = 0; i < images.length; i++) {
-      const img = images[i];
-      if (!img.image) continue;
+    const res = await fetch(`${API_BASE}/api/upload/freelancer-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({ images })
+    });
 
-      if (img.image.startsWith('http://') || img.image.startsWith('https://')) {
-        urls.push(img.image);
-        continue;
-      }
-
-      const base64Data = img.image.replace(/^data:image\/\w+;base64,/, '');
-      const buffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-      const fileName = `${Date.now()}_${i}_${Math.random().toString(36).substring(7)}.png`;
-
-      const { error } = await supabase.storage
-        .from('freelancer-images')
-        .upload(fileName, buffer, { contentType: 'image/png', upsert: true });
-
-      if (error) throw error;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('freelancer-images')
-        .getPublicUrl(fileName);
-
-      urls.push(publicUrlData.publicUrl);
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success) {
+      return {
+        success: true,
+        urls: data.urls || (data.url ? [data.url] : []),
+        message: data.message
+      };
     }
-    return { success: true, urls };
+
+    return {
+      success: false,
+      urls: [],
+      message: data.message || 'Gagal mengunggah gambar ke server.'
+    };
   } catch (err: any) {
-    return { success: false, urls: [], message: err.message || 'Gagal mengunggah gambar' };
+    console.error('[UPLOAD] Error upload freelancer images:', err);
+    return {
+      success: false,
+      urls: [],
+      message: err.message || 'Terjadi kesalahan jaringan saat mengunggah gambar.'
+    };
   }
 }
 
-// Admin API
-export async function loginAdminApi(emailOrUsername: string, password: string): Promise<{
+// ==========================================
+// ADMIN AUTH & MANAGEMENT API (/api/admin/*)
+// ==========================================
+
+export async function loginAdminApi(
+  emailOrUsername: string,
+  password: string
+): Promise<{
   success: boolean;
   session?: AdminSession;
   message?: string;
 }> {
   try {
-    const { data, error } = await supabase
-      .from('admins')
-      .select('*')
-      .or(`email.eq.${emailOrUsername},username.eq.${emailOrUsername}`)
-      .eq('password', password)
-      .maybeSingle();
+    const res = await fetch(`${API_BASE}/api/admin/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ emailOrUsername, password })
+    });
 
-    if (error || !data) {
-      return { success: false, message: 'Kredensial admin salah atau tidak cocok.' };
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && data.success && data.token) {
+      const userPayload = data.admin || data.user || {};
+      const session: AdminSession = {
+        access_token: data.token,
+        token: data.token,
+        user: {
+          id: String(userPayload.id || ''),
+          email: userPayload.email || `${emailOrUsername.trim()}@prossindo.com`,
+          username: userPayload.username || emailOrUsername.trim(),
+          name: userPayload.name || userPayload.username || 'Super Admin',
+          role: 'admin'
+        }
+      };
+
+      localStorage.setItem('supabase_admin_session', JSON.stringify(session));
+      return { success: true, session };
     }
 
-    const session: AdminSession = {
-      user: {
-        id: data.id,
-        email: data.email,
-        username: data.username,
-        name: data.name || data.username
-      },
-      access_token: `admin-token-${data.id}-${Date.now()}`
+    return {
+      success: false,
+      message: data.message || 'Kredensial login admin tidak valid.'
     };
-
-    localStorage.setItem('supabase_admin_session', JSON.stringify(session));
-    return { success: true, session };
   } catch (err: any) {
-    return { success: false, message: 'Terjadi kesalahan saat login: ' + err.message };
+    console.error('[ADMIN LOGIN] Error login admin API:', err);
+    return {
+      success: false,
+      message: err.message || 'Gagal menghubungi server untuk autentikasi admin.'
+    };
   }
 }
 
 export async function fetchAdminsApi(): Promise<AdminAccount[]> {
   try {
-    const { data, error } = await supabase.from('admins').select('*');
-    if (!error && Array.isArray(data)) return data;
-  } catch (e) {
-    // fallback
+    const res = await fetch(`${API_BASE}/api/admin/list`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        ...getAuthHeaders()
+      }
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success && Array.isArray(data.admins)) {
+      return data.admins;
+    }
+    return [];
+  } catch (err) {
+    console.error('[ADMIN LIST] Error memuat daftar admin dari server:', err);
+    return [];
   }
-  return [];
 }
 
-export async function createAdminApi(data: { email: string; password: string; name: string; username: string }): Promise<{
+export async function createAdminApi(data: {
+  email: string;
+  password: string;
+  name: string;
+  username: string;
+}): Promise<{
   success: boolean;
   message?: string;
 }> {
   try {
-    const { error } = await supabase.from('admins').insert([data]);
-    if (error) return { success: false, message: error.message };
-    return { success: true, message: 'Admin berhasil dibuat' };
+    const res = await fetch(`${API_BASE}/api/admin/create-admin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(data)
+    });
+
+    const resData = await res.json().catch(() => ({}));
+    if (res.ok && resData.success) {
+      return {
+        success: true,
+        message: resData.message || 'Admin baru berhasil dibuat di database'
+      };
+    }
+
+    return {
+      success: false,
+      message: resData.message || 'Gagal membuat admin baru.'
+    };
   } catch (err: any) {
-    return { success: false, message: err.message };
+    console.error('[CREATE ADMIN] Error membuat admin:', err);
+    return {
+      success: false,
+      message: err.message || 'Terjadi kesalahan jaringan saat membuat admin.'
+    };
   }
 }
 
-export async function deleteAdminApi(id: string | number): Promise<{ success: boolean; message?: string }> {
+export async function deleteAdminApi(id: string | number): Promise<{
+  success: boolean;
+  message?: string;
+}> {
   try {
-    const { error } = await supabase.from('admins').delete().eq('id', id);
-    if (error) return { success: false, message: error.message };
-    return { success: true, message: 'Admin berhasil dihapus' };
+    const res = await fetch(`${API_BASE}/api/admin/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        ...getAuthHeaders()
+      }
+    });
+
+    const resData = await res.json().catch(() => ({}));
+    if (res.ok && resData.success) {
+      return {
+        success: true,
+        message: resData.message || 'Admin berhasil dihapus dari database'
+      };
+    }
+
+    return {
+      success: false,
+      message: resData.message || 'Gagal menghapus admin.'
+    };
   } catch (err: any) {
-    return { success: false, message: err.message };
+    console.error('[DELETE ADMIN] Error menghapus admin:', err);
+    return {
+      success: false,
+      message: err.message || 'Terjadi kesalahan jaringan saat menghapus admin.'
+    };
   }
 }
 
-// Member API
-export async function loginMemberApi(username: string): Promise<{
+// ==========================================
+// MEMBER AUTH API (/api/member/login)
+// ==========================================
+
+export async function loginMemberApi(
+  username: string,
+  name?: string
+): Promise<{
   success: boolean;
   member?: Member;
   message?: string;
 }> {
+  const cleanUsername = username.trim();
+  if (!cleanUsername) {
+    return { success: false, message: 'Username tidak boleh kosong.' };
+  }
+
   try {
-    const cleanUsername = username.trim();
-    if (!cleanUsername) {
-      return { success: false, message: 'Username tidak boleh kosong.' };
+    const res = await fetch(`${API_BASE}/api/member/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ username: cleanUsername, name })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success && data.member) {
+      return {
+        success: true,
+        member: data.member
+      };
     }
 
-    // Cek apakah member sudah ada di database
-    const { data: existing } = await supabase
-      .from('members')
-      .select('*')
-      .ilike('username', cleanUsername)
-      .maybeSingle();
-
-    if (existing) {
-      return { success: true, member: existing };
-    }
-
-    // Jika belum ada, otomatis daftarkan member baru
-    const newMember = {
-      username: cleanUsername,
-      created_at: new Date().toISOString()
+    return {
+      success: false,
+      message: data.message || 'Gagal login member.'
     };
-
-    const { data: created, error: createError } = await supabase
-      .from('members')
-      .insert([newMember])
-      .select()
-      .maybeSingle();
-
-    if (createError || !created) {
-      return { success: true, member: { id: Date.now().toString(), username: cleanUsername } as Member };
-    }
-
-    return { success: true, member: created };
   } catch (err: any) {
-    return { success: false, message: err.message || 'Gagal autentikasi member.' };
+    console.error('[MEMBER LOGIN] Error login member API:', err);
+    return {
+      success: false,
+      message: err.message || 'Gagal menghubungi server untuk login member.'
+    };
   }
 }

@@ -27,12 +27,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={() => onChangeView('catalog')}
           className="flex items-center gap-3 cursor-pointer group select-none"
         >
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-lg tracking-wider shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-            P
-          </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-base tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
+              <span className="font-black text-base sm:text-lg tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
                 PROSS INDO
               </span>
               <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60">
@@ -41,7 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-              Direktori Talent Freelance & Partner Bisnis
+              Portal Talent & Partner Terbaik
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Freelancer } from '../types';
 import { 
   ChevronLeft, 
@@ -27,6 +27,12 @@ export const DetailView: React.FC<DetailViewProps> = ({
 }) => {
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
+  // Ref untuk touch swipe gesture
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const touchDeltaX = useRef<number>(0);
+  const touchDeltaY = useRef<number>(0);
+
   let imgList: string[] = [];
   if (Array.isArray(talent.images)) {
     imgList = talent.images;
@@ -45,14 +51,58 @@ export const DetailView: React.FC<DetailViewProps> = ({
   const currentImg = imgList[currentImgIndex] || imgList[0];
   const isAvailable = talent.status === 'Available';
 
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePrev = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setCurrentImgIndex((prev) => (prev > 0 ? prev - 1 : imgList.length - 1));
   };
 
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleNext = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setCurrentImgIndex((prev) => (prev < imgList.length - 1 ? prev + 1 : 0));
+  };
+
+  // Handler Touch Swipe Gesture untuk pengguna perangkat seluler
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    touchDeltaX.current = 0;
+    touchDeltaY.current = 0;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
+    touchDeltaY.current = e.touches[0].clientY - touchStartY.current;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null) return;
+    const distanceX = touchDeltaX.current;
+    const distanceY = touchDeltaY.current;
+    const minSwipeDistance = 40;
+
+    // Jika pergeseran horizontal lebih kuat daripada vertikal
+    if (Math.abs(distanceX) > minSwipeDistance && Math.abs(distanceX) > Math.abs(distanceY)) {
+      if (imgList.length > 1) {
+        if (distanceX < 0) {
+          // Geser ke kiri -> foto berikutnya
+          handleNext();
+        } else {
+          // Geser ke kanan -> foto sebelumnya
+          handlePrev();
+        }
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+    touchDeltaX.current = 0;
+    touchDeltaY.current = 0;
+  };
+
+  const handleImageClick = () => {
+    if (Math.abs(touchDeltaX.current) > 10) return;
+    onOpenLightbox(imgList, currentImgIndex);
   };
 
   return (
@@ -70,13 +120,18 @@ export const DetailView: React.FC<DetailViewProps> = ({
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden">
-        {/* Gallery / Carousel Section */}
-        <div className="relative bg-slate-950 flex items-center justify-center h-80 sm:h-96 md:h-[420px] overflow-hidden group">
+        {/* Gallery / Carousel Section (1:1 aspect-square, object-cover tanpa bilah hitam samping) */}
+        <div 
+          className="relative w-full aspect-square bg-slate-100 overflow-hidden group select-none touch-pan-y"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <img
             src={currentImg}
             alt={talent.name}
-            onClick={() => onOpenLightbox(imgList, currentImgIndex)}
-            className="w-full h-full object-contain cursor-zoom-in transition-transform duration-300 group-hover:scale-101"
+            onClick={handleImageClick}
+            className="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-105"
           />
 
           {/* Status Badge */}
@@ -94,7 +149,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
           {/* Lightbox Trigger */}
           <button
             onClick={() => onOpenLightbox(imgList, currentImgIndex)}
-            className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-md"
+            className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-md active:scale-95"
             title="Perbesar Foto"
           >
             <Maximize2 className="w-4 h-4" />
@@ -104,44 +159,29 @@ export const DetailView: React.FC<DetailViewProps> = ({
           {imgList.length > 1 && (
             <>
               <button
+                type="button"
                 onClick={handlePrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-lg"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-lg active:scale-95 z-10"
                 title="Foto Sebelumnya"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
+                type="button"
                 onClick={handleNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-lg"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-lg active:scale-95 z-10"
                 title="Foto Selanjutnya"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
 
               {/* Counter Badge */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/70 text-white text-xs font-bold backdrop-blur-sm">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/70 text-white text-xs font-bold backdrop-blur-sm z-10">
                 {currentImgIndex + 1} / {imgList.length}
               </div>
             </>
           )}
         </div>
-
-        {/* Thumbnail Strip (if multiple photos) */}
-        {imgList.length > 1 && (
-          <div className="p-3 bg-slate-100 flex gap-2 overflow-x-auto border-b border-slate-200">
-            {imgList.map((url, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentImgIndex(idx)}
-                className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
-                  idx === currentImgIndex ? 'border-blue-600 scale-105' : 'border-transparent opacity-60 hover:opacity-100'
-                }`}
-              >
-                <img src={url} alt="" className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Details Content */}
         <div className="p-6 sm:p-8">
@@ -175,7 +215,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
           <div className="pt-6">
             <h3 className="font-extrabold text-slate-900 text-base mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4 text-blue-600" />
-              <span>Tentang & Kualifikasi Talenta</span>
+              <span>Deskripsi Talent</span>
             </h3>
             <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
               {talent.description || 'Belum ada deskripsi profil untuk talenta ini.'}

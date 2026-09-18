@@ -20,7 +20,8 @@ import {
   Clock,
   Layers,
   UserPlus,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 interface AdminViewProps {
@@ -49,6 +50,7 @@ interface AdminViewProps {
   onDeleteLead: (id: number | string) => Promise<boolean>;
   onOpenEditWaModal: () => void;
   onRefreshLeads: () => Promise<void>;
+  onShowToast?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 export const AdminView: React.FC<AdminViewProps> = ({
@@ -67,7 +69,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
   onDeleteMember,
   onDeleteLead,
   onOpenEditWaModal,
-  onRefreshLeads
+  onRefreshLeads,
+  onShowToast
 }) => {
   // Freelancer Form state
   const [editingId, setEditingId] = useState<number | string | null>(null);
@@ -93,21 +96,105 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [creatingMember, setCreatingMember] = useState(false);
 
   const [refreshingLeads, setRefreshingLeads] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // State untuk Modal Konfirmasi Hapus yang aman dan ramah iframe
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    type: 'talent' | 'admin' | 'member' | 'lead';
+    id: number | string;
+    name: string;
+  } | null>(null);
+  const [deletingConfirm, setDeletingConfirm] = useState(false);
+
+  const handleExecuteDelete = async () => {
+    if (!deleteConfirmation) return;
+    setDeletingConfirm(true);
+    try {
+      if (deleteConfirmation.type === 'talent') {
+        await onDeleteFreelancer(deleteConfirmation.id);
+      } else if (deleteConfirmation.type === 'admin') {
+        await onDeleteAdmin(deleteConfirmation.id);
+      } else if (deleteConfirmation.type === 'member') {
+        await onDeleteMember(String(deleteConfirmation.id));
+      } else if (deleteConfirmation.type === 'lead') {
+        await onDeleteLead(deleteConfirmation.id);
+      }
+    } catch (err) {
+      console.error('Error executing delete:', err);
+    } finally {
+      setDeletingConfirm(false);
+      setDeleteConfirmation(null);
+    }
+  };
 
   // Clean WA for link
   const cleanWa = adminWa.replace(/[^0-9]/g, '') || '6285111029242';
 
-  // Handle image selection via input
+  // Batasan format dan ukuran upload gambar (Audit Keamanan)
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
+  // Handle image selection via input with strict validation and 5-photo maximum
   const handleFilesSelected = (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const readers: Promise<{ image: string; name: string }>[] = [];
+    setUploadError(null);
+
+    const currentTotal = existingImages.length + newImageFiles.length;
+    if (currentTotal >= 5) {
+      const msg = 'Maksimal 5 foto per talent. Hapus beberapa foto terlebih dahulu jika ingin menambah foto baru.';
+      setUploadError(msg);
+      onShowToast?.(msg, 'error');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const validFiles: File[] = [];
+    const errorMessages: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      if (!file.type.startsWith('image/')) continue;
+      const lowerName = file.name.toLowerCase();
+      const hasValidExt = ALLOWED_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+      const hasValidMime = ALLOWED_MIME_TYPES.includes(file.type.toLowerCase());
 
-      const p = new Promise<{ image: string; name: string }>((resolve) => {
+      // 1. Validasi Format Gambar: Hanya JPEG, PNG, WEBP
+      if (!hasValidMime && !hasValidExt) {
+        errorMessages.push(`Format file "${file.name}" tidak didukung. Hanya JPEG, PNG, atau WEBP yang diizinkan.`);
+        continue;
+      }
+
+      // 2. Validasi Ukuran File: Maksimal 5MB
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+        errorMessages.push(`Ukuran file "${file.name}" (${sizeMb}MB) melebihi batas maksimal 5MB.`);
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    const availableSlots = 5 - currentTotal;
+    let filesToProcess = validFiles;
+    if (validFiles.length > availableSlots) {
+      errorMessages.push(`Maksimal 5 foto per talent. Hanya ${availableSlots} foto pertama yang ditambahkan.`);
+      filesToProcess = validFiles.slice(0, availableSlots);
+    }
+
+    if (errorMessages.length > 0) {
+      const combinedError = errorMessages.join(' ');
+      setUploadError(combinedError);
+      onShowToast?.(combinedError, 'error');
+    }
+
+    if (filesToProcess.length === 0) {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const readers: Promise<{ image: string; name: string }>[] = filesToProcess.map((file) => {
+      return new Promise<{ image: string; name: string }>((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
           resolve({
@@ -117,11 +204,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
         };
         reader.readAsDataURL(file);
       });
-      readers.push(p);
-    }
+    });
 
     Promise.all(readers).then((results) => {
       setNewImageFiles((prev) => [...prev, ...results]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     });
   };
 
@@ -132,6 +219,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     setStatus(f.status || 'Available');
     setService(f.service || '');
     setDescription(f.description || '');
+    setUploadError(null);
 
     let imgs: string[] = [];
     if (Array.isArray(f.images)) {
@@ -158,6 +246,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     setDescription('');
     setExistingImages([]);
     setNewImageFiles([]);
+    setUploadError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -240,9 +329,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
               Dashboard Manajemen PROSS INDO
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 font-normal mt-1 max-w-xl">
-              Kelola talenta freelance, unggah foto ke Supabase Storage, atur akun admin & member, serta pantau kontak lead WhatsApp.
-            </p>
           </div>
 
           {/* Quick Stat Cards */}
@@ -327,9 +413,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 <h3 className="font-black text-slate-900 text-base">
                   {editingId ? 'Edit Data Talent' : 'Tambah Talent Baru'}
                 </h3>
-                <p className="text-[11px] text-slate-500">
-                  {editingId ? `Mengubah ID: ${editingId}` : 'Data tersimpan langsung ke Supabase'}
-                </p>
+                {editingId && (
+                  <p className="text-[11px] text-slate-500">
+                    Mengubah ID: {editingId}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -348,14 +436,14 @@ export const AdminView: React.FC<AdminViewProps> = ({
           <form onSubmit={handleSubmitFreelancer} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Nama Lengkap Talent *
+                NAMA TALENT *
               </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Contoh: Budi Santoso"
+                placeholder=""
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm"
               />
             </div>
@@ -369,7 +457,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Jakarta, Bandung, dll."
+                  placeholder=""
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm"
                 />
               </div>
@@ -384,33 +472,33 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm bg-white"
                 >
                   <option value="Available">Available (Tersedia)</option>
-                  <option value="Busy">Busy (Penuh)</option>
+                  <option value="Busy">Sold Out (Penuh)</option>
                 </select>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Bidang Layanan / Keahlian
+                LAYANAN / KEAHLIAN
               </label>
               <input
                 type="text"
                 value={service}
                 onChange={(e) => setService(e.target.value)}
-                placeholder="UI/UX Designer, Web Developer, Video Editor..."
+                placeholder=""
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Deskripsi Profil & Pengalaman
+                DESKRIPSI PROFIL TALENT
               </label>
               <textarea
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Pengalaman kerja, portofolio ringkas, software yang dikuasai..."
+                placeholder=""
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm resize-none"
               />
             </div>
@@ -418,33 +506,53 @@ export const AdminView: React.FC<AdminViewProps> = ({
             {/* Unggah Gambar ke Supabase Storage */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                <span>Foto Profil & Portofolio</span>
-                <span className="text-[10px] text-blue-600 font-semibold normal-case">
-                  Supabase Storage Bucket: 'freelancer-images'
-                </span>
+                <span>FOTO TALENT (Max. 5 Foto)</span>
               </label>
 
               {/* Upload Drop Area */}
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-4 text-center cursor-pointer transition-colors bg-slate-50 hover:bg-blue-50/30"
+                className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors ${
+                  uploadError
+                    ? 'border-red-300 bg-red-50/40 hover:bg-red-50/70'
+                    : 'border-slate-200 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/30'
+                }`}
               >
-                <UploadCloud className="w-7 h-7 text-blue-500 mx-auto mb-1.5" />
+                <UploadCloud className={`w-7 h-7 mx-auto mb-1.5 ${uploadError ? 'text-red-500' : 'text-blue-500'}`} />
                 <p className="text-xs font-bold text-slate-700">
                   Klik untuk pilih foto dari perangkat
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Mendukung PNG, JPG, JPEG, WebP. Disimpan sebagai URL publik di cloud.
+                  Format: JPEG, PNG, WEBP &bull; Maksimal 5MB per file
                 </p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={(e) => handleFilesSelected(e.target.files)}
                   className="hidden"
                 />
               </div>
+
+              {/* Notifikasi Error Validasi Gambar */}
+              {uploadError && (
+                <div className="mt-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2 animate-in fade-in duration-200">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+                  <div className="flex-1 leading-relaxed">
+                    <p className="font-bold">Gagal Mengunggah Foto</p>
+                    <p className="text-[11px] text-red-600 mt-0.5">{uploadError}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUploadError(null)}
+                    className="text-red-400 hover:text-red-600 p-0.5"
+                    title="Tutup pesan"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
 
               {/* Thumbnails of existing and newly selected photos */}
               {(existingImages.length > 0 || newImageFiles.length > 0) && (
@@ -524,7 +632,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 Daftar Talent ({freelancers.length})
               </h3>
               <p className="text-[11px] text-slate-500">
-                Data talenta yang aktif ditampilkan pada halaman publik/member
+                Data Talent yang aktif ditampilkan pada Halaman Member
               </p>
             </div>
           </div>
@@ -586,11 +694,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => {
-                                if (window.confirm(`Hapus talenta "${f.name}" dari database Supabase?`)) {
-                                  onDeleteFreelancer(f.id);
-                                }
-                              }}
+                              onClick={() => setDeleteConfirmation({ type: 'talent', id: f.id, name: f.name })}
                               className="p-1.5 rounded-lg text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors"
                               title="Hapus"
                             >
@@ -620,9 +724,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
               <h3 className="font-black text-slate-900 text-base">
                 Kelola Super Admin Supabase
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Penyimpanan penuh di tabel `admins` Supabase (bebas file JSON lokal)
-              </p>
             </div>
           </div>
 
@@ -704,11 +805,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
                   {!isMe && (
                     <button
-                      onClick={() => {
-                        if (window.confirm(`Hapus admin ${adm.email}?`)) {
-                          onDeleteAdmin(adm.id || adm.email);
-                        }
-                      }}
+                      onClick={() => setDeleteConfirmation({ type: 'admin', id: adm.id || adm.email, name: adm.email || adm.username })}
                       className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Hapus Admin"
                     >
@@ -731,36 +828,33 @@ export const AdminView: React.FC<AdminViewProps> = ({
               <h3 className="font-black text-slate-900 text-base">
                 Kelola Member ({members.length})
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Daftar akun member tersimpan di tabel `members` Supabase
-              </p>
             </div>
           </div>
 
           {/* Form Tambah Member */}
-          <form onSubmit={handleCreateMemberSubmit} className="flex gap-2 mb-6">
+          <form onSubmit={handleCreateMemberSubmit} className="flex flex-col gap-2.5 mb-6">
             <input
               type="text"
               required
               value={newMemberUsername}
               onChange={(e) => setNewMemberUsername(e.target.value)}
               placeholder="Username member..."
-              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs outline-none focus:border-emerald-600"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs outline-none focus:border-emerald-600"
             />
             <input
               type="text"
               value={newMemberName}
               onChange={(e) => setNewMemberName(e.target.value)}
-              placeholder="Nama (opsional)..."
-              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs outline-none focus:border-emerald-600"
+              placeholder="Nama Member"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs outline-none focus:border-emerald-600"
             />
             <button
               type="submit"
               disabled={creatingMember || !newMemberUsername.trim()}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1 transition-all disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
             >
               {creatingMember ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-              <span>Tambah</span>
+              <span>Tambah Member</span>
             </button>
           </form>
 
@@ -783,11 +877,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     )}
                   </div>
                   <button
-                    onClick={() => {
-                      if (window.confirm(`Hapus member ${m.username}?`)) {
-                        onDeleteMember(m.username);
-                      }
-                    }}
+                    onClick={() => setDeleteConfirmation({ type: 'member', id: m.username, name: m.name || m.username })}
                     className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Hapus Member"
                   >
@@ -809,7 +899,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             </div>
             <div>
               <h3 className="font-black text-slate-900 text-base">
-                Riwayat Konsultasi Lead WhatsApp ({waLeads.length})
+                Riwayat Lead ({waLeads.length})
               </h3>
               <p className="text-[11px] text-slate-500">
                 Log pengunjung & member yang telah menghubungi Admin WhatsApp via katalog
@@ -872,11 +962,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <td className="py-3 pl-3 text-right whitespace-nowrap">
                       {lead.id && (
                         <button
-                          onClick={() => {
-                            if (window.confirm('Hapus entri riwayat lead ini?')) {
-                              onDeleteLead(lead.id!);
-                            }
-                          }}
+                          onClick={() => setDeleteConfirmation({ type: 'lead', id: lead.id!, name: `Lead "${lead.talent_name}" dari ${lead.member_name}` })}
                           className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
                           title="Hapus Entri"
                         >
@@ -891,6 +977,83 @@ export const AdminView: React.FC<AdminViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Modal Konfirmasi Hapus Data (Aman, Iframe-friendly) */}
+      {deleteConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div 
+            className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base">
+                    Konfirmasi Hapus Data
+                  </h3>
+                  <p className="text-[11px] text-slate-500 capitalize">
+                    {deleteConfirmation.type === 'talent' ? 'Hapus Talent dari Database' :
+                     deleteConfirmation.type === 'admin' ? 'Hapus Akun Admin' :
+                     deleteConfirmation.type === 'member' ? 'Hapus Akun Member' : 'Hapus Riwayat Lead'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => !deletingConfirm && setDeleteConfirmation(null)}
+                disabled={deletingConfirm}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="py-5 text-xs sm:text-sm text-slate-600 leading-relaxed">
+              <p>
+                Apakah Anda yakin ingin menghapus <strong className="text-slate-900 font-black break-all">{deleteConfirmation.name}</strong> dari database Supabase?
+              </p>
+              {deleteConfirmation.type === 'talent' && (
+                <p className="mt-2 text-[11px] text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-100">
+                  Berkas foto terkait di Supabase Storage (bucket <em>freelancer-images</em>) juga akan dibersihkan secara otomatis.
+                </p>
+              )}
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={deletingConfirm}
+                onClick={() => setDeleteConfirmation(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={deletingConfirm}
+                onClick={handleExecuteDelete}
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                {deletingConfirm ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Menghapus...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Ya, Hapus Data</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

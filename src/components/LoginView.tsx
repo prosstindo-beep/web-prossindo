@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, ArrowRight, Loader2, Users, CheckCircle2, Lock } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Loader2, Users, Lock } from 'lucide-react';
 
 interface LoginViewProps {
   onMemberLogin: (username: string) => Promise<void>;
@@ -25,14 +25,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
       <div className="max-w-md w-full my-auto">
         {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-600 text-white font-black text-2xl shadow-xl shadow-blue-500/25 mb-4 transform hover:scale-105 transition-transform">
-            P
-          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
             PROSS INDO
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Direktori Talent Freelance & Partner Bisnis Terkurasi
+            Portal Talent & Partner Terbaik
           </p>
         </div>
 
@@ -44,7 +41,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 Portal Member
               </h2>
               <p className="text-xs text-slate-500">
-                Akses katalog lengkap talenta profesional
+                Akses Katalog Talent Terbaik
               </p>
             </div>
             <span className="p-2 rounded-xl bg-blue-50 text-blue-600">
@@ -63,13 +60,9 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Contoh: Budi, Sarah, atau username Anda"
+                placeholder="Username Member"
                 className="w-full px-4 py-3.5 rounded-2xl border border-slate-200 focus:border-blue-600 focus:ring-3 focus:ring-blue-100 outline-none text-sm font-medium transition-all"
               />
-              <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                Daftar otomatis tersimpan ke server saat login pertama kali.
-              </p>
             </div>
 
             <button
@@ -117,7 +110,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
         {/* Security Badge */}
         <div className="mt-6 flex items-center justify-center gap-2 text-slate-400 text-xs font-medium">
           <Lock className="w-3.5 h-3.5 text-slate-400" />
-          <span>Koneksi aman terenkripsi & Terintegrasi Supabase</span>
+          <span>Koneksi Aman & Terenkripsi</span>
         </div>
       </div>
     </main>

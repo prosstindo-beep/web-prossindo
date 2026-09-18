@@ -13,8 +13,22 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
+// Percayai proxy reversibel pertama (NGINX/Cloud Run/Vercel) untuk identifikasi IP yang aman
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+
+// CORS Middleware untuk menangani request dari browser / iframe preview
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Blokir keras (HTTP 403) permintaan ke file sensitif server, secrets, dan database lokal
 app.use((req, res, next) => {
@@ -42,6 +56,11 @@ const adminLoginLimiter = rateLimit({
   max: 5, // Maksimal 5 percobaan
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    xForwardedForHeader: false,
+    forwardedHeader: false,
+    trustProxy: false
+  },
   message: {
     success: false,
     valid: false,
@@ -55,6 +74,11 @@ const waLeadsLimiter = rateLimit({
   max: 10, // Maksimal 10 permintaan
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    xForwardedForHeader: false,
+    forwardedHeader: false,
+    trustProxy: false
+  },
   message: {
     data: null,
     error: {
@@ -90,6 +114,21 @@ function getSupabaseConfig() {
     }
   }
 
+  // Jika SUPABASE_URL kosong atau masih placeholder 'your-project', gunakan fallback dari VITE_SUPABASE_URL atau VITE_API_BASE_URL jika berisi domain Supabase
+  if (!url || url.includes('your-project') || !url.startsWith('http')) {
+    if (process.env.VITE_SUPABASE_URL && !process.env.VITE_SUPABASE_URL.includes('your-project')) {
+      url = process.env.VITE_SUPABASE_URL;
+    } else if (process.env.VITE_API_BASE_URL && process.env.VITE_API_BASE_URL.includes('supabase.co')) {
+      url = process.env.VITE_API_BASE_URL;
+    }
+  }
+
+  if (!key || key.includes('your-anon-key')) {
+    if (process.env.VITE_SUPABASE_ANON_KEY) {
+      key = process.env.VITE_SUPABASE_ANON_KEY;
+    }
+  }
+
   return { supabaseUrl: url, supabaseKey: key, serviceRoleKey: serviceKey };
 }
 
@@ -99,13 +138,17 @@ function getSupabaseClient() {
   if (!supabaseClientInstance) {
     const { supabaseUrl, supabaseKey, serviceRoleKey } = getSupabaseConfig();
     const key = serviceRoleKey || supabaseKey;
-    if (supabaseUrl && key) {
-      supabaseClientInstance = createClient(supabaseUrl, key, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false
-        }
-      });
+    if (supabaseUrl && key && (supabaseUrl.startsWith('http://') || supabaseUrl.startsWith('https://'))) {
+      try {
+        supabaseClientInstance = createClient(supabaseUrl, key, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false
+          }
+        });
+      } catch (e) {
+        console.warn('[SUPABASE] Server client creation failed:', e.message);
+      }
     }
   }
   return supabaseClientInstance;
@@ -578,7 +621,10 @@ app.post('/api/admin/create-admin', async (req, res) => {
       // Perbarui password hash jika admin dengan username ini sudah ada
       const { data: updated, error: updErr } = await sb
         .from('admins')
-        .update({ password_hash: bcryptPasswordHash })
+        .update({ 
+          password_hash: bcryptPasswordHash,
+          email: cleanEmail
+        })
         .eq('id', existingDbAdmins[0].id)
         .select();
 
@@ -594,7 +640,9 @@ app.post('/api/admin/create-admin', async (req, res) => {
         .from('admins')
         .insert([{
           username: cleanUsername,
-          password_hash: bcryptPasswordHash
+          email: cleanEmail,
+          password_hash: bcryptPasswordHash,
+          role: 'admin'
         }])
         .select();
 
@@ -1276,6 +1324,40 @@ async function handleDbUpdate(req, res) {
           updateData.images = [updateData.images];
         }
         updateData.images = await processFreelancerImagesForStorage(updateData.images, sb);
+
+        // Hapus foto lama dari Supabase Storage yang tidak lagi digunakan setelah edit
+        const targetId = (match && match.id) || req.query.id;
+        if (targetId) {
+          try {
+            const queryId = (!isNaN(Number(targetId)) && String(Number(targetId)) === String(targetId).trim()) ? Number(targetId) : targetId;
+            const { data: oldRow } = await sb.from('freelancers').select('images').eq('id', queryId).maybeSingle();
+            if (oldRow && oldRow.images) {
+              let oldImgs = oldRow.images;
+              if (typeof oldImgs === 'string') {
+                try { oldImgs = JSON.parse(oldImgs); } catch (e) { oldImgs = [oldImgs]; }
+              }
+              if (Array.isArray(oldImgs)) {
+                const currentImgs = Array.isArray(updateData.images) ? updateData.images : [];
+                const toRemove = [];
+                for (const oldUrl of oldImgs) {
+                  if (typeof oldUrl === 'string' && oldUrl.includes('/freelancer-images/') && !currentImgs.includes(oldUrl)) {
+                    const parts = oldUrl.split('/freelancer-images/');
+                    if (parts[1]) {
+                      const cleanFilename = decodeURIComponent(parts[1].split('?')[0]);
+                      if (cleanFilename) toRemove.push(cleanFilename);
+                    }
+                  }
+                }
+                if (toRemove.length > 0) {
+                  console.log('[STORAGE] Menghapus foto lama yang diganti:', toRemove);
+                  await sb.storage.from('freelancer-images').remove(toRemove);
+                }
+              }
+            }
+          } catch (cleanErr) {
+            console.warn('[STORAGE] Peringatan pembersihan foto lama:', cleanErr.message);
+          }
+        }
       }
     }
 
@@ -1290,14 +1372,19 @@ async function handleDbUpdate(req, res) {
     let query = sb.from(cleanTable).update(updateData);
     if (match && typeof match === 'object' && Object.keys(match).length > 0) {
       for (const [col, val] of Object.entries(match)) {
+        let cleanVal = val;
+        if (col === 'id' && typeof val === 'string' && !isNaN(Number(val)) && String(Number(val)) === val.trim()) {
+          cleanVal = Number(val);
+        }
         if (req.body.ilike === true) {
-          query = query.ilike(col, val);
+          query = query.ilike(col, cleanVal);
         } else {
-          query = query.eq(col, val);
+          query = query.eq(col, cleanVal);
         }
       }
     } else if (req.query.id) {
-      query = query.eq('id', req.query.id);
+      const cleanId = (!isNaN(Number(req.query.id)) && String(Number(req.query.id)) === String(req.query.id).trim()) ? Number(req.query.id) : req.query.id;
+      query = query.eq('id', cleanId);
     } else {
       return res.status(400).json({ data: null, error: { message: 'Kriteria match / filter identitas data wajib ditentukan.' } });
     }
@@ -1338,18 +1425,59 @@ async function handleDbDelete(req, res) {
 
     const cleanTable = table.toLowerCase();
     const match = req.body?.match || {};
-    const id = req.query?.id || req.body?.id;
-    const username = req.query?.username || req.body?.username;
+    const id = req.query?.id || req.body?.id || match.id;
+    const username = req.query?.username || req.body?.username || match.username;
+
+    // Jika menghapus talent di freelancers, hapus juga file foto dari Supabase Storage bucket 'freelancer-images' jika ada
+    if (cleanTable === 'freelancers' && id) {
+      try {
+        const queryId = (!isNaN(Number(id)) && String(Number(id)) === String(id).trim()) ? Number(id) : id;
+        const { data: row } = await sb.from('freelancers').select('images').eq('id', queryId).maybeSingle();
+        if (row && row.images) {
+          let imgs = row.images;
+          if (typeof imgs === 'string') {
+            try { imgs = JSON.parse(imgs); } catch (e) { imgs = [imgs]; }
+          }
+          if (Array.isArray(imgs)) {
+            const filesToRemove = [];
+            for (const imgUrl of imgs) {
+              if (typeof imgUrl === 'string' && imgUrl.includes('/freelancer-images/')) {
+                const parts = imgUrl.split('/freelancer-images/');
+                if (parts[1]) {
+                  const cleaned = decodeURIComponent(parts[1].split('?')[0]);
+                  if (cleaned) filesToRemove.push(cleaned);
+                }
+              }
+            }
+            if (filesToRemove.length > 0) {
+              console.log('[STORAGE] Menghapus file foto talent dari bucket freelancer-images:', filesToRemove);
+              await sb.storage.from('freelancer-images').remove(filesToRemove);
+            }
+          }
+        }
+      } catch (storageErr) {
+        console.warn('[STORAGE] Gagal menghapus foto saat hapus talent:', storageErr.message || storageErr);
+      }
+    }
 
     let query = sb.from(cleanTable).delete();
     if (match && typeof match === 'object' && Object.keys(match).length > 0) {
       for (const [col, val] of Object.entries(match)) {
-        query = query.eq(col, val);
+        let cleanVal = val;
+        if (col === 'id' && typeof val === 'string' && !isNaN(Number(val)) && String(Number(val)) === val.trim()) {
+          cleanVal = Number(val);
+        }
+        if (col === 'username') {
+          query = query.ilike(col, String(cleanVal));
+        } else {
+          query = query.eq(col, cleanVal);
+        }
       }
     } else if (id) {
-      query = query.eq('id', id);
+      const cleanId = (!isNaN(Number(id)) && String(Number(id)) === String(id).trim()) ? Number(id) : id;
+      query = query.eq('id', cleanId);
     } else if (username) {
-      query = query.eq('username', username);
+      query = query.ilike('username', String(username));
     } else {
       return res.status(400).json({ success: false, error: { message: 'Kriteria penghapusan data tidak ditemukan.' } });
     }
@@ -1433,12 +1561,9 @@ async function startServer() {
     }
   });
 
-  // Hanya dengarkan port jika aplikasi berjalan di lingkungan lokal (bukan production/serverless)
-  if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running at http://0.0.0.0:${PORT}`);
-    });
-  }
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running at http://0.0.0.0:${PORT}`);
+  });
 }
 
 startServer().catch(err => {

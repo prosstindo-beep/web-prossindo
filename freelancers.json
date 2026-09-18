@@ -1,0 +1,76 @@
+[
+  {
+    "id": 1,
+    "name": "Bima Arya Prasetyo",
+    "location": "Jakarta Selatan",
+    "status": "Available",
+    "service": "Fullstack Web & Mobile Developer",
+    "description": "Spesialis pengembangan aplikasi web modern (React, Next.js, Node.js) dan mobile cross-platform. Pengalaman 5+ tahun mengerjakan sistem enterprise dan MVP startup dengan performa tinggi.",
+    "images": [
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80"
+    ],
+    "created_at": "2025-01-15T08:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "name": "Anindya Putri Kirana",
+    "location": "Bandung",
+    "status": "Available",
+    "service": "Senior UI/UX & Product Designer",
+    "description": "Mendesain antarmuka pengguna yang memikat, intuitif, dan berorientasi konversi bisnis. Mahir dalam Figma, design systems, usability testing, dan interactive prototyping.",
+    "images": [
+      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&auto=format&fit=crop&q=80"
+    ],
+    "created_at": "2025-01-18T09:30:00.000Z"
+  },
+  {
+    "id": 3,
+    "name": "Rizky Ramadhan",
+    "location": "Surabaya",
+    "status": "Busy",
+    "service": "Video Editor & Motion Graphic Animator",
+    "description": "Editor video kreatif untuk konten TikTok, Instagram Reels, YouTube, dan iklan komersial TV/Digital. Mahir Premiere Pro, After Effects, dan Color Grading Davinci Resolve.",
+    "images": [
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80"
+    ],
+    "created_at": "2025-02-01T10:15:00.000Z"
+  },
+  {
+    "id": 4,
+    "name": "Dyah Citra Wulandari",
+    "location": "Yogyakarta",
+    "status": "Available",
+    "service": "Digital Marketing & SEO Copywriter",
+    "description": "Pakar strategi konten organik dan copywriting persuasif. Membantu menaikkan traffic website dan conversion rate melalui riset keyword mendalam dan storytelling berbobot.",
+    "images": [
+      "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=800&auto=format&fit=crop&q=80"
+    ],
+    "created_at": "2025-02-10T11:45:00.000Z"
+  },
+  {
+    "id": 5,
+    "name": "Kevin Sanjaya",
+    "location": "Bali",
+    "status": "Available",
+    "service": "Branding & Creative Graphic Designer",
+    "description": "Membantu UMKM hingga korporasi membangun identitas visual yang kuat, mulai dari logo, brand guidelines, kemasan produk (packaging), hingga materi promosi cetak & digital.",
+    "images": [
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80"
+    ],
+    "created_at": "2025-02-20T14:20:00.000Z"
+  },
+  {
+    "id": 6,
+    "name": "Farhan Alamsyah",
+    "location": "Malang",
+    "status": "Available",
+    "service": "DevOps & Cloud Infrastructure Specialist",
+    "description": "Implementasi CI/CD, arsitektur cloud AWS/GCP, Docker containerization, dan pengamanan server aplikasi dengan uptime 99.9%.",
+    "images": [
+      "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80"
+    ],
+    "created_at": "2025-03-01T07:10:00.000Z"
+  }
+]

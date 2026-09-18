@@ -56,14 +56,11 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       <div className="mb-8 sm:mb-10 text-center max-w-2xl mx-auto">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200/80 mb-3 shadow-xs">
           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-          Katalog Terkurasi PROSS INDO
+          Katalog PORTAL PROSS INDO
         </span>
         <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-          Temukan Talenta Freelance Terbaik
+          Temukan Talent & Partner Terbaik
         </h1>
-        <p className="text-xs sm:text-sm text-slate-600 font-medium mt-2 leading-relaxed">
-          Hubungkan proyek bisnis Anda dengan freelancer terpercaya. Bebas konsultasi langsung dengan Super Admin melalui WhatsApp.
-        </p>
       </div>
 
       {/* Filter and Search Bar */}
@@ -103,7 +100,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           <div className="text-right sm:text-left self-end sm:self-center">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">
               <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-              {filtered.length} talenta
+              {filtered.length} Talent
             </span>
           </div>
         </div>
@@ -211,30 +208,17 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
                 {/* Card Footer Actions */}
                 <div className="p-5 pt-0">
-                  <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelectTalent(talent);
                       }}
-                      className="inline-flex items-center gap-1.5 text-slate-500 hover:text-blue-600 text-xs font-semibold py-1.5 transition-colors"
+                      className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-xs font-bold py-1 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
                       <span>Lihat Profil</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onContactWa(talent);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs shadow-xs transition-all active:scale-95"
-                      title="Hubungi Admin WhatsApp"
-                    >
-                      <MessageCircle className="w-4 h-4 text-emerald-600" />
-                      <span>Hubungi WA</span>
                     </button>
                   </div>
                 </div>
