@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ShieldCheck, ArrowRight, Loader2, Users, Lock } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Loader2, Users, Lock, AlertCircle } from 'lucide-react';
 
 interface LoginViewProps {
-  onMemberLogin: (username: string) => Promise<void>;
+  onMemberLogin: (username: string) => Promise<string | null | void>;
   onOpenAdminModal: () => void;
   loading: boolean;
 }
@@ -13,11 +13,16 @@ export const LoginView: React.FC<LoginViewProps> = ({
   loading
 }) => {
   const [username, setUsername] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (!username.trim()) return;
-    await onMemberLogin(username.trim());
+    const error = await onMemberLogin(username.trim());
+    if (error) {
+      setErrorMessage(error);
+    }
   };
 
   return (
@@ -59,11 +64,25 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 type="text"
                 required
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username Member"
-                className="w-full px-4 py-3.5 rounded-2xl border border-slate-200 focus:border-blue-600 focus:ring-3 focus:ring-blue-100 outline-none text-sm font-medium transition-all"
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (errorMessage) setErrorMessage(null);
+                }}
+                placeholder="Masukkan Username Anda"
+                className={`w-full px-4 py-3.5 rounded-2xl border ${
+                  errorMessage ? 'border-red-300 focus:border-red-500 focus:ring-red-100' : 'border-slate-200 focus:border-blue-600 focus:ring-blue-100'
+                } focus:ring-3 outline-none text-sm font-medium transition-all`}
               />
             </div>
+
+            {errorMessage && (
+              <div id="memberLoginErrorAlert" className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <div className="flex-1 leading-relaxed">
+                  {errorMessage}
+                </div>
+              </div>
+            )}
 
             <button
               id="btnMemberLoginSubmit"

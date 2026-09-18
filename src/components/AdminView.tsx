@@ -14,11 +14,7 @@ import {
   RotateCcw, 
   Loader2, 
   ExternalLink,
-  Tag, 
-  MapPin, 
   CheckCircle2, 
-  Clock,
-  Layers,
   UserPlus,
   RefreshCw,
   AlertCircle
@@ -805,7 +801,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
                   {!isMe && (
                     <button
-                      onClick={() => setDeleteConfirmation({ type: 'admin', id: adm.id || adm.email, name: adm.email || adm.username })}
+                      onClick={() => setDeleteConfirmation({ type: 'admin', id: adm.id || adm.email, name: adm.name || adm.username || adm.email || 'Admin' })}
                       className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Hapus Admin"
                     >

@@ -10,8 +10,7 @@ import {
   MessageCircle, 
   ExternalLink,
   ChevronLeft,
-  ChevronRight,
-  Maximize2
+  ChevronRight
 } from 'lucide-react';
 
 // 1. Modal Login Admin

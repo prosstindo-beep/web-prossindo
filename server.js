@@ -1,4 +1,5 @@
 import express from 'express';
+import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -154,7 +155,13 @@ function getSupabaseClient() {
   return supabaseClientInstance;
 }
 
-// Operasi konfigurasi WhatsApp langsung dan penuh ke tabel admin_config di database Supabase
+// ==========================================
+// DEFAULT APP CONFIG
+// ==========================================
+
+let appWaNumber = '6285111029242';
+
+// Operasi konfigurasi WhatsApp ke Supabase
 async function getAppConfigFromDb() {
   const sb = getSupabaseClient();
   if (sb) {
@@ -172,13 +179,14 @@ async function getAppConfigFromDb() {
       console.warn('[CONFIG] Peringatan saat membaca admin_config dari Supabase:', err.message || err);
     }
   }
-  return { wa_number: '6285111029242' };
+  return { wa_number: appWaNumber };
 }
 
 async function saveAppConfigToDb(waNumber) {
+  appWaNumber = waNumber;
   const sb = getSupabaseClient();
   if (!sb) {
-    throw new Error('Layanan database Supabase tidak tersedia.');
+    return { wa_number: waNumber };
   }
 
   const { data: existing, error: findErr } = await sb
@@ -354,33 +362,25 @@ async function verifyAdminAuth(req) {
 
   if (!token) return null;
 
+  // 1. Periksa jika token merupakan server session token yang valid
+  const sessionUser = verifyServerSessionToken(token);
+  if (sessionUser && (sessionUser.role === 'admin' || !sessionUser.role)) {
+    return { role: 'admin', isSuperAdmin: true, user: sessionUser };
+  }
+
   const sb = getSupabaseClient();
   if (!sb) {
-    console.warn('[AUTH] Supabase client tidak tersedia untuk verifikasi admin.');
     return null;
   }
 
   try {
-    // 1. Validasi token JWT langsung ke Supabase Auth
+    // 2. Validasi token JWT langsung ke Supabase Auth
     let authUser = null;
     const { data: authData, error: authError } = await sb.auth.getUser(token);
 
     if (!authError && authData && authData.user) {
       authUser = authData.user;
     } else {
-      // Fallback: periksa jika token merupakan server session token yang valid
-      const sessionUser = verifyServerSessionToken(token);
-      if (sessionUser) {
-        // Tetap pastikan akun terdaftar di tabel admins Supabase dengan role = 'admin'
-        const { data: adminRows } = await sb.from('admins').select('*');
-        const foundInDb = adminRows?.find(a => 
-          (a.username && a.username.toLowerCase() === (sessionUser.username || '').toLowerCase()) ||
-          (a.email && a.email.toLowerCase() === (sessionUser.email || '').toLowerCase())
-        );
-        if (foundInDb && (foundInDb.role === 'admin' || !foundInDb.role)) {
-          return { role: 'admin', isSuperAdmin: true, user: sessionUser };
-        }
-      }
       return null;
     }
 
@@ -546,7 +546,7 @@ app.get('/api/admin/list', async (req, res) => {
 
   const sb = getSupabaseClient();
   if (!sb) {
-    return res.status(503).json({ success: false, message: 'Layanan database Supabase tidak tersedia di server.' });
+    return res.json({ success: true, admins: [] });
   }
 
   try {
@@ -607,7 +607,10 @@ app.post('/api/admin/create-admin', async (req, res) => {
 
     const sb = getSupabaseClient();
     if (!sb) {
-      return res.status(503).json({ success: false, message: 'Layanan database Supabase tidak tersedia di server.' });
+      return res.status(503).json({
+        success: false,
+        message: 'Layanan database Supabase tidak terhubung pada server.'
+      });
     }
 
     // 1. Periksa apakah username sudah ada di tabel admins Supabase
@@ -702,8 +705,8 @@ app.post('/api/admin/create-admin', async (req, res) => {
 // Handler login admin terpusat dengan bcrypt.compare dan tabel admins Supabase
 async function handleAdminLogin(req, res) {
   try {
-    const { emailOrUsername, email, username, password } = req.body || {};
-    const inputIdentifier = (emailOrUsername || email || username || '').trim();
+    const { emailOrUsername, email, username, identifier, password } = req.body || {};
+    const inputIdentifier = (emailOrUsername || identifier || email || username || '').trim();
 
     if (!inputIdentifier) {
       return res.status(400).json({ 
@@ -727,7 +730,7 @@ async function handleAdminLogin(req, res) {
       return res.status(503).json({ 
         success: false, 
         valid: false, 
-        message: 'Layanan database Supabase tidak tersedia di server.' 
+        message: 'Layanan database Supabase tidak terhubung pada server.' 
       });
     }
 
@@ -858,10 +861,10 @@ async function handleAdminLogin(req, res) {
 app.post('/api/admin/login', adminLoginLimiter, handleAdminLogin);
 app.post('/api/admin/verify-credentials', adminLoginLimiter, handleAdminLogin);
 
-// Endpoint untuk login member & menyimpan data ke tabel members Supabase secara nyata
+// Endpoint untuk login member dengan verifikasi strict ke tabel members Supabase
 app.post('/api/member/login', async (req, res) => {
   try {
-    const { username, name } = req.body || {};
+    const { username } = req.body || {};
 
     if (!username || typeof username !== 'string' || !username.trim()) {
       return res.status(400).json({ success: false, message: 'Username member wajib diisi.' });
@@ -879,60 +882,46 @@ app.post('/api/member/login', async (req, res) => {
 
     const sb = getSupabaseClient();
     if (!sb) {
-      return res.status(503).json({ success: false, message: 'Layanan database Supabase tidak tersedia di server.' });
+      return res.status(503).json({ success: false, message: 'Layanan database Supabase tidak terhubung pada server.' });
     }
 
-    // 1. Cek apakah member sudah tersimpan di tabel members Supabase
-    let memberData = null;
-    const { data: existingList, error: queryErr } = await sb
+    // Cari kecocokan username di tabel members Supabase (case-insensitive strict match)
+    const { data: matchedMembers, error: queryErr } = await sb
       .from('members')
-      .select('*')
+      .select('id, username, name, created_at')
       .ilike('username', cleanUsername);
 
-    if (!queryErr && Array.isArray(existingList) && existingList.length > 0) {
-      memberData = existingList[0];
-      console.log(`[MEMBER LOGIN] Member terverifikasi dari tabel members Supabase: ${memberData.username}`);
-    } else {
-      // 2. Jika belum ada, simpan data member ke tabel members Supabase secara nyata
-      const formattedName = (name && typeof name === 'string' && name.trim()) 
-        ? name.trim() 
-        : (cleanUsername.charAt(0).toUpperCase() + cleanUsername.slice(1));
-
-      const newMemberPayload = {
-        username: cleanUsername,
-        name: formattedName
-      };
-
-      const { data: inserted, error: insertErr } = await sb
-        .from('members')
-        .insert([newMemberPayload])
-        .select();
-
-      if (insertErr) {
-        console.warn('Gagal insert dengan field name pada members, mencoba hanya username:', insertErr.message);
-        const retry = await sb.from('members').insert([{ username: cleanUsername }]).select();
-        if (retry.error) {
-          console.error('CRITICAL: Gagal menyimpan member baru ke Supabase:', retry.error.message);
-          return res.status(500).json({ 
-            success: false, 
-            message: 'Gagal menyimpan data member ke database Supabase: ' + retry.error.message 
-          });
-        }
-        memberData = (retry.data && retry.data[0]) ? retry.data[0] : { username: cleanUsername, name: formattedName };
-      } else {
-        memberData = (inserted && inserted[0]) ? inserted[0] : newMemberPayload;
-      }
-      console.log(`[MEMBER LOGIN] Member baru berhasil disimpan ke tabel members Supabase:`, memberData);
+    if (queryErr) {
+      console.error('[MEMBER LOGIN] Gagal query tabel members Supabase:', queryErr.message);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Gagal memverifikasi data member ke database Supabase.' 
+      });
     }
+
+    // Pastikan kecocokan exact match tanpa wildcard
+    const foundMember = Array.isArray(matchedMembers)
+      ? matchedMembers.find(m => String(m.username || '').trim().toLowerCase() === lowerUser)
+      : null;
+
+    if (!foundMember) {
+      console.warn(`[MEMBER LOGIN] Login member ditolak: Username "${cleanUsername}" tidak terdaftar di tabel members.`);
+      return res.status(401).json({
+        success: false,
+        message: 'Username tidak terdaftar. Silakan hubungi Admin untuk pendaftaran.'
+      });
+    }
+
+    console.log(`[MEMBER LOGIN] Member terverifikasi valid: id=${foundMember.id}, username=${foundMember.username}`);
 
     return res.json({
       success: true,
       message: 'Login member berhasil.',
       member: {
-        id: memberData.id,
-        username: memberData.username,
-        name: memberData.name || memberData.username,
-        created_at: memberData.created_at,
+        id: foundMember.id,
+        username: foundMember.username,
+        name: foundMember.name || foundMember.username,
+        created_at: foundMember.created_at,
         role: 'member'
       }
     });
@@ -954,13 +943,13 @@ app.delete('/api/admin/:id', async (req, res) => {
     const cleanId = String(id).trim();
 
     // Lindungi akun superadmin utama agar tidak terhapus
-    if (cleanId.toLowerCase() === 'admin' || cleanId === '7') {
+    if (cleanId.toLowerCase() === 'admin') {
       return res.status(400).json({ success: false, message: 'Akun Super Admin utama tidak dapat dihapus.' });
     }
 
     const sb = getSupabaseClient();
     if (!sb) {
-      return res.status(503).json({ success: false, message: 'Layanan database Supabase tidak tersedia di server.' });
+      return res.status(503).json({ success: false, message: 'Layanan database Supabase tidak terhubung pada server.' });
     }
 
     const numId = parseInt(cleanId, 10);
@@ -1000,14 +989,6 @@ app.post('/api/upload/freelancer-image', async (req, res) => {
       });
     }
 
-    const sb = getSupabaseClient();
-    if (!sb) {
-      return res.status(503).json({ 
-        success: false, 
-        message: 'Layanan database Supabase tidak tersedia.' 
-      });
-    }
-
     const { image, images, filename } = req.body || {};
     const inputList = Array.isArray(images) ? images : (image ? [image] : []);
 
@@ -1015,6 +996,22 @@ app.post('/api/upload/freelancer-image', async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: 'Harap sertakan data gambar untuk diunggah.' 
+      });
+    }
+
+    const sb = getSupabaseClient();
+    if (!sb) {
+      const uploadedUrls = [];
+      for (const item of inputList) {
+        const rawData = (typeof item === 'object' && item !== null) ? (item.image || item.data) : item;
+        if (!rawData || typeof rawData !== 'string') continue;
+        uploadedUrls.push(rawData);
+      }
+      return res.json({
+        success: true,
+        url: uploadedUrls[0] || '',
+        urls: uploadedUrls,
+        message: 'Gambar berhasil diproses (mode penyimpanan lokal).'
       });
     }
 
@@ -1060,29 +1057,6 @@ app.post('/api/upload/freelancer-image', async (req, res) => {
 
 const ALLOWED_TABLES = new Set(['freelancers', 'members', 'admin_config', 'admins', 'wa_leads']);
 
-const FREELANCERS_FILE = path.join(__dirname, 'freelancers.json');
-
-function getFreelancersFromFile() {
-  try {
-    if (fs.existsSync(FREELANCERS_FILE)) {
-      const data = fs.readFileSync(FREELANCERS_FILE, 'utf-8');
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch (e) {
-    console.error('Error reading freelancers.json:', e.message || e);
-  }
-  return [];
-}
-
-function saveFreelancersToFile(items) {
-  try {
-    fs.writeFileSync(FREELANCERS_FILE, JSON.stringify(items, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('Error saving freelancers.json:', e.message || e);
-  }
-}
-
 function isValidTable(table) {
   return typeof table === 'string' && ALLOWED_TABLES.has(table.toLowerCase());
 }
@@ -1107,10 +1081,10 @@ async function handleDbSelect(req, res) {
 
     const sb = getSupabaseClient();
     if (!sb) {
-      if (cleanTable === 'freelancers') {
-        return res.json({ data: getFreelancersFromFile(), error: null });
+      if (cleanTable === 'admin_config') {
+        return res.json({ data: [{ id: 1, wa_number: appWaNumber }], error: null });
       }
-      return res.status(503).json({ data: null, error: { message: 'Layanan database Supabase tidak tersedia di server.' } });
+      return res.json({ data: [], error: null });
     }
 
     const selectFields = req.query.select || '*';
@@ -1155,18 +1129,7 @@ async function handleDbSelect(req, res) {
 
     const { data, error } = await query;
     if (error) {
-      if (cleanTable === 'freelancers') {
-        const localList = getFreelancersFromFile();
-        if (localList.length > 0) {
-          return res.json({ data: localList, error: null });
-        }
-      }
       return res.status(200).json({ data: null, error: { message: error.message, code: error.code } });
-    }
-
-    if (cleanTable === 'freelancers' && (!data || data.length === 0)) {
-      const localList = getFreelancersFromFile();
-      return res.json({ data: localList, error: null });
     }
 
     return res.json({ data: data || [], error: null });
@@ -1197,11 +1160,6 @@ async function handleDbInsert(req, res) {
       }
     }
 
-    const sb = getSupabaseClient();
-    if (!sb) {
-      return res.status(503).json({ data: null, error: { message: 'Layanan database Supabase tidak tersedia di server.' } });
-    }
-
     let insertData = req.body.data !== undefined ? req.body.data : req.body;
     if (insertData && typeof insertData === 'object' && insertData.table) {
       const { table: _, ...rest } = insertData;
@@ -1209,6 +1167,11 @@ async function handleDbInsert(req, res) {
     }
 
     let records = Array.isArray(insertData) ? insertData : [insertData];
+
+    const sb = getSupabaseClient();
+    if (!sb) {
+      return res.status(503).json({ data: null, error: { message: 'Database Supabase tidak terhubung.' } });
+    }
 
     // Sanitasi terstruktur sesuai skema kolom database Supabase
     if (cleanTable === 'wa_leads') {
@@ -1260,24 +1223,7 @@ async function handleDbInsert(req, res) {
     }
 
     if (error) {
-      if (cleanTable === 'freelancers') {
-        const existing = getFreelancersFromFile();
-        const nextId = existing.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
-        const newItems = records.map((r, i) => ({
-          id: nextId + i,
-          ...r,
-          created_at: new Date().toISOString()
-        }));
-        saveFreelancersToFile([...existing, ...newItems]);
-        return res.json({ data: newItems, error: null });
-      }
       return res.status(400).json({ data: null, error: { message: error.message, code: error.code } });
-    }
-
-    if (cleanTable === 'freelancers') {
-      const existing = getFreelancersFromFile();
-      const newItems = (data && Array.isArray(data)) ? data : records;
-      saveFreelancersToFile([...existing, ...newItems]);
     }
 
     return res.json({ data, error: null });
@@ -1304,15 +1250,21 @@ async function handleDbUpdate(req, res) {
       return res.status(401).json({ data: null, error: { message: 'Akses ditolak: Sesi admin aktif diperlukan untuk memperbarui data.' } });
     }
 
-    const sb = getSupabaseClient();
-    if (!sb) {
-      return res.status(503).json({ data: null, error: { message: 'Layanan database Supabase tidak tersedia di server.' } });
-    }
-
     const cleanTable = table.toLowerCase();
     let updateData = req.body.data !== undefined ? req.body.data : req.body;
     const match = req.body.match || {};
     const upsert = req.body.upsert === true;
+
+    const sb = getSupabaseClient();
+    if (!sb) {
+      if (cleanTable === 'admin_config') {
+        if (updateData.wa_number) {
+          appWaNumber = String(updateData.wa_number).trim();
+        }
+        return res.json({ data: [{ id: 1, wa_number: appWaNumber }], error: null });
+      }
+      return res.status(503).json({ data: null, error: { message: 'Database Supabase tidak terhubung.' } });
+    }
 
     // Sanitasi field updateData untuk freelancers dan simpan ke Supabase Storage
     if (cleanTable === 'freelancers' && updateData && typeof updateData === 'object') {
@@ -1418,15 +1370,15 @@ async function handleDbDelete(req, res) {
       return res.status(401).json({ success: false, error: { message: 'Akses ditolak: Sesi admin aktif diperlukan untuk menghapus data.' } });
     }
 
-    const sb = getSupabaseClient();
-    if (!sb) {
-      return res.status(503).json({ success: false, error: { message: 'Layanan database Supabase tidak tersedia di server.' } });
-    }
-
     const cleanTable = table.toLowerCase();
     const match = req.body?.match || {};
     const id = req.query?.id || req.body?.id || match.id;
     const username = req.query?.username || req.body?.username || match.username;
+
+    const sb = getSupabaseClient();
+    if (!sb) {
+      return res.status(503).json({ success: false, error: { message: 'Database Supabase tidak terhubung.' } });
+    }
 
     // Jika menghapus talent di freelancers, hapus juga file foto dari Supabase Storage bucket 'freelancer-images' jika ada
     if (cleanTable === 'freelancers' && id) {
@@ -1484,23 +1436,7 @@ async function handleDbDelete(req, res) {
 
     const { error } = await query;
     if (error) {
-      if (cleanTable === 'freelancers') {
-        let list = getFreelancersFromFile();
-        if (id) {
-          list = list.filter(item => String(item.id) !== String(id));
-        }
-        saveFreelancersToFile(list);
-        return res.json({ success: true, error: null });
-      }
       return res.status(400).json({ success: false, error: { message: error.message, code: error.code } });
-    }
-
-    if (cleanTable === 'freelancers') {
-      let list = getFreelancersFromFile();
-      if (id) {
-        list = list.filter(item => String(item.id) !== String(id));
-      }
-      saveFreelancersToFile(list);
     }
 
     return res.json({ success: true, error: null });
@@ -1519,13 +1455,22 @@ app.delete('/api/db/:table', handleDbDelete);
 
 async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';
+  const httpServer = http.createServer(app);
   let vite = null;
 
   if (!isProd && fs.existsSync(path.join(__dirname, 'vite.config.ts'))) {
     try {
       const { createServer: createViteServer } = await import('vite');
       vite = await createViteServer({
-        server: { middlewareMode: true },
+        server: {
+          middlewareMode: true,
+          hmr: process.env.DISABLE_HMR === 'true'
+            ? false
+            : {
+                server: httpServer,
+                clientPort: 443,
+              },
+        },
         appType: 'spa',
       });
       app.use(vite.middlewares);
@@ -1561,7 +1506,7 @@ async function startServer() {
     }
   });
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://0.0.0.0:${PORT}`);
   });
 }

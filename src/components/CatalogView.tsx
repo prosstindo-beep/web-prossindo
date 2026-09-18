@@ -5,7 +5,6 @@ import {
   MapPin, 
   Tag, 
   Eye, 
-  MessageCircle, 
   Sparkles, 
   Users, 
   Filter,

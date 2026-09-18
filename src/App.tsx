@@ -144,12 +144,12 @@ export default function App() {
             const verifyRes = await verifyAuthApi(token);
             if (verifyRes.authenticated && verifyRes.role === 'admin') {
               const serverUser = verifyRes.user || parsed?.user || {};
-              const email = serverUser.email || 'admin@prossindo.com';
-              const name = serverUser.name || serverUser.username || email.split('@')[0];
+              const email = serverUser.email || (serverUser.username ? `${serverUser.username.toLowerCase()}@prossindo.com` : '');
+              const name = serverUser.name || serverUser.username || (email ? email.split('@')[0] : 'Admin');
               const adminUser: CurrentUser = {
                 role: 'admin',
                 email,
-                username: serverUser.username || email.split('@')[0],
+                username: serverUser.username || (email ? email.split('@')[0] : 'admin'),
                 name
               };
               setCurrentUser(adminUser);
@@ -175,13 +175,37 @@ export default function App() {
           }
         }
 
-        // Restore sesi member jika ada
+        // Restore sesi member jika ada (verifikasi ketat ke tabel members Supabase)
         const currentSavedUser = localStorage.getItem('currentUser');
         if (currentSavedUser) {
           const parsedUser: CurrentUser = JSON.parse(currentSavedUser);
           if (parsedUser && parsedUser.username && parsedUser.role === 'member') {
-            setCurrentUser(parsedUser);
-            setCurrentView('catalog');
+            try {
+              const checkMember = await dbProxy.select<Member>('members', {
+                filterField: 'username',
+                filterValue: parsedUser.username.trim()
+              });
+              if (
+                checkMember.data &&
+                Array.isArray(checkMember.data) &&
+                checkMember.data.some(
+                  (m) => String(m.username || '').trim().toLowerCase() === parsedUser.username.trim().toLowerCase()
+                )
+              ) {
+                setCurrentUser(parsedUser);
+                setCurrentView('catalog');
+              } else {
+                console.warn('[AUTH] Sesi member tidak valid atau telah dihapus dari tabel members.');
+                localStorage.removeItem('currentUser');
+                setCurrentUser(null);
+                setCurrentView('login');
+              }
+            } catch (err) {
+              console.warn('[AUTH] Gagal memverifikasi sesi member tersimpan:', err);
+              // Jika verifikasi gagal karena koneksi, tetap izinkan fallback jika sudah ada sesi
+              setCurrentUser(parsedUser);
+              setCurrentView('catalog');
+            }
           } else if (parsedUser && parsedUser.role === 'admin') {
             // Admin tanpa token terverifikasi tidak diizinkan masuk
             localStorage.removeItem('currentUser');
@@ -198,7 +222,7 @@ export default function App() {
   }, [loadFreelancers, loadAdminData]);
 
   // Handle Member Login
-  const handleMemberLogin = async (username: string) => {
+  const handleMemberLogin = async (username: string): Promise<string | null> => {
     setMemberLoginLoading(true);
     const res = await loginMemberApi(username);
     setMemberLoginLoading(false);
@@ -213,8 +237,11 @@ export default function App() {
       localStorage.setItem('currentUser', JSON.stringify(userObj));
       setCurrentView('catalog');
       addToast(`Selamat datang, ${userObj.name}!`, 'success');
+      return null;
     } else {
-      addToast(res.message || 'Gagal masuk member.', 'error');
+      const errorMessage = res.message || 'Username tidak terdaftar. Silakan hubungi Admin untuk pendaftaran.';
+      addToast(errorMessage, 'error');
+      return errorMessage;
     }
   };
 

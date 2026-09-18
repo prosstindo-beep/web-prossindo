@@ -1,12 +1,41 @@
-import { AdminAccount, AdminSession, Freelancer, Member, WaLead } from './types';
+import { AdminAccount, AdminSession, Member } from './types';
 
-function getApiBaseUrl(): string {
-  const envBase = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
-  // Cegah pengiriman request ke domain Supabase jika VITE_API_BASE_URL salah dikonfigurasi
-  if (!envBase || envBase.includes('supabase.co') || envBase.includes('your-project')) {
-    return '';
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const envBase = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
+
+    // Cegah pengiriman request langsung ke domain Supabase jika VITE_API_BASE_URL salah dikonfigurasi
+    if (!envBase || envBase.includes('supabase.co') || envBase.includes('your-project')) {
+      return '';
+    }
+
+    // Jika diakses dari HTTPS (misal preview Cloud Run ais-dev-... / ais-pre-...),
+    // memanggil http:// akan diblokir keras oleh browser dengan error "Failed to fetch" (Mixed Content)
+    if (window.location.protocol === 'https:' && envBase.startsWith('http://')) {
+      return '';
+    }
+
+    // Jika envBase mengarah ke localhost/127.0.0.1 tetapi halaman dibuka dari host remote
+    if (
+      (envBase.includes('localhost') || envBase.includes('127.0.0.1')) &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1'
+    ) {
+      return '';
+    }
+
+    // Jika origin sama, gunakan path relatif '' agar request otomatis diarahkan ke server yang sama
+    if (envBase === window.location.origin) {
+      return '';
+    }
+
+    return envBase;
   }
-  return envBase;
+  return '';
+}
+
+export function getApiBase(): string {
+  return getApiBaseUrl();
 }
 
 const API_BASE = getApiBaseUrl();
@@ -487,8 +516,7 @@ export async function deleteAdminApi(id: string | number): Promise<{
 // ==========================================
 
 export async function loginMemberApi(
-  username: string,
-  name?: string
+  username: string
 ): Promise<{
   success: boolean;
   member?: Member;
@@ -506,7 +534,7 @@ export async function loginMemberApi(
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ username: cleanUsername, name })
+      body: JSON.stringify({ username: cleanUsername })
     });
 
     const data = await res.json().catch(() => ({}));
@@ -519,7 +547,7 @@ export async function loginMemberApi(
 
     return {
       success: false,
-      message: data.message || 'Gagal login member.'
+      message: data.message || 'Username tidak terdaftar. Silakan hubungi Admin untuk pendaftaran.'
     };
   } catch (err: any) {
     console.error('[MEMBER LOGIN] Error login member API:', err);
