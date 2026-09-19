@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { AdminAccount, CurrentUser, Freelancer, Member, WaLead } from '../types';
+import { testWaConnectionApi } from '../api';
 import { 
   ShieldCheck, 
   Users, 
@@ -380,6 +381,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
             href={`https://wa.me/${cleanWa}?text=Tes%20Koneksi%20WhatsApp%20PROSS%20INDO`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              testWaConnectionApi();
+            }}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />

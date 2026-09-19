@@ -45,21 +45,95 @@ const API_BASE = getApiBaseUrl();
 // ==========================================
 
 export function getAuthToken(): string {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return '';
+  }
+
+  // 1. Periksa penyimpanan sesi admin utama 'supabase_admin_session'
   try {
     const raw = localStorage.getItem('supabase_admin_session');
     if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed.access_token || parsed.token || '';
+      // Cek jika raw merupakan string token langsung tanpa JSON format
+      const trimmedRaw = raw.trim();
+      if (
+        (trimmedRaw.startsWith('ey') || trimmedRaw.length >= 20 || trimmedRaw.includes('.')) &&
+        !trimmedRaw.startsWith('{') &&
+        !trimmedRaw.startsWith('[')
+      ) {
+        return trimmedRaw;
+      }
+
+      const parsed = JSON.parse(trimmedRaw);
+      if (typeof parsed === 'string' && parsed.trim()) {
+        return parsed.trim();
+      }
+      if (parsed && typeof parsed === 'object') {
+        const token =
+          parsed.access_token ||
+          parsed.token ||
+          parsed.session?.access_token ||
+          parsed.session?.token ||
+          parsed.user?.token ||
+          parsed.user?.access_token;
+        if (token && typeof token === 'string' && token.trim()) {
+          return token.trim();
+        }
+      }
     }
   } catch (e) {
-    // Ignore error
+    // Fallback bila raw string tidak valid JSON tapi ada isinya
+    try {
+      const fallbackRaw = localStorage.getItem('supabase_admin_session');
+      if (fallbackRaw && typeof fallbackRaw === 'string' && fallbackRaw.trim().length >= 10) {
+        return fallbackRaw.trim();
+      }
+    } catch {}
   }
+
+  // 2. Periksa data sesi di 'currentUser'
+  try {
+    const userRaw = localStorage.getItem('currentUser');
+    if (userRaw) {
+      const parsedUser = JSON.parse(userRaw);
+      if (parsedUser && typeof parsedUser === 'object') {
+        const t = parsedUser.access_token || parsedUser.token || parsedUser.sessionToken;
+        if (t && typeof t === 'string' && t.trim()) return t.trim();
+      }
+    }
+  } catch (e) {}
+
+  // 3. Periksa kunci cadangan umum token
+  const fallbackKeys = ['admin_token', 'token', 'access_token', 'auth_token'];
+  for (const key of fallbackKeys) {
+    try {
+      const val = localStorage.getItem(key);
+      if (val && typeof val === 'string') {
+        const trimmed = val.trim();
+        if (!trimmed) continue;
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+          const p = JSON.parse(trimmed);
+          if (p && typeof p === 'object') {
+            const t = p.access_token || p.token;
+            if (t && typeof t === 'string' && t.trim()) return t.trim();
+          }
+        } else {
+          return trimmed;
+        }
+      }
+    } catch (e) {}
+  }
+
   return '';
 }
 
 export function getAuthHeaders(): Record<string, string> {
   const token = getAuthToken();
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+  if (!token) return {};
+  return {
+    'Authorization': `Bearer ${token}`,
+    'X-Admin-Token': token,
+    'X-Access-Token': token
+  };
 }
 
 // ==========================================
@@ -281,7 +355,10 @@ export async function getWaConfig(): Promise<string> {
   try {
     const res = await fetch(`${API_BASE}/api/config/wa`, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' }
+      headers: {
+        'Accept': 'application/json',
+        ...getAuthHeaders()
+      }
     });
     if (res.ok) {
       const data = await res.json();
@@ -293,6 +370,25 @@ export async function getWaConfig(): Promise<string> {
     console.error('[CONFIG WA] Gagal memuat nomor WhatsApp dari backend:', err);
   }
   return '6285111029242';
+}
+
+export async function testWaConnectionApi(): Promise<{ success: boolean; wa_number: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/config/wa`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        ...getAuthHeaders()
+      }
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { success: true, wa_number: data.wa_number || '6285111029242' };
+    }
+  } catch (err) {
+    console.error('[CONFIG WA] Gagal tes koneksi WhatsApp:', err);
+  }
+  return { success: false, wa_number: '6285111029242' };
 }
 
 export async function saveWaConfig(waNumber: string): Promise<boolean> {
@@ -399,6 +495,7 @@ export async function loginAdminApi(
       };
 
       localStorage.setItem('supabase_admin_session', JSON.stringify(session));
+      localStorage.setItem('admin_token', data.token);
       return { success: true, session };
     }
 
