@@ -922,59 +922,121 @@ export const AdminView: React.FC<AdminViewProps> = ({
             Belum ada data lead WhatsApp yang tercatat.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="pb-3 pr-3">Waktu</th>
-                  <th className="pb-3 px-3">Nama Pengirim</th>
-                  <th className="pb-3 px-3">Talenta Tujuan</th>
-                  <th className="pb-3 px-3">Layanan</th>
-                  <th className="pb-3 px-3">Catatan / Proyek</th>
-                  <th className="pb-3 px-3">Status</th>
-                  <th className="pb-3 pl-3 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {waLeads.map((lead) => (
-                  <tr key={lead.id || `${lead.member_name}-${lead.talent_name}`} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 pr-3 text-slate-400 whitespace-nowrap">
-                      {lead.created_at ? new Date(lead.created_at).toLocaleString('id-ID') : '-'}
-                    </td>
-                    <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">
-                      {lead.member_name}
-                    </td>
-                    <td className="py-3 px-3 font-semibold text-blue-600 whitespace-nowrap">
-                      {lead.talent_name}
-                    </td>
-                    <td className="py-3 px-3 text-slate-600 whitespace-nowrap">
-                      {lead.service}
-                    </td>
-                    <td className="py-3 px-3 text-slate-500 max-w-xs truncate">
-                      {lead.reference}
-                    </td>
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Terkirim ke WA
+          <>
+            {/* Tampilan Mobile: Kartu Responsif Khusus Layar HP (Tanpa perlu geser tabel ke samping) */}
+            <div className="block sm:hidden space-y-3">
+              {waLeads.map((lead) => (
+                <div 
+                  key={lead.id || `${lead.member_name}-${lead.talent_name}`}
+                  className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 text-xs shadow-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">
+                        {lead.created_at ? new Date(lead.created_at).toLocaleString('id-ID') : '-'}
                       </span>
-                    </td>
-                    <td className="py-3 pl-3 text-right whitespace-nowrap">
-                      {lead.id && (
-                        <button
-                          onClick={() => setDeleteConfirmation({ type: 'lead', id: lead.id!, name: `Lead "${lead.talent_name}" dari ${lead.member_name}` })}
-                          className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
-                          title="Hapus Entri"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </td>
+                      <h4 className="font-extrabold text-slate-900 text-sm mt-0.5">
+                        {lead.member_name}
+                      </h4>
+                    </div>
+                    {lead.id && (
+                      <button
+                        onClick={() => setDeleteConfirmation({ type: 'lead', id: lead.id!, name: `Lead "${lead.talent_name}" dari ${lead.member_name}` })}
+                        className="p-2 -mr-1 -mt-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors active:scale-90"
+                        title="Hapus Entri"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/50">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Talenta Tujuan:</span>
+                      <span className="font-bold text-blue-600 text-xs truncate block">
+                        {lead.talent_name}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Layanan:</span>
+                      <span className="font-medium text-slate-700 text-xs truncate block">
+                        {lead.service}
+                      </span>
+                    </div>
+                  </div>
+
+                  {lead.reference && (
+                    <div className="bg-white p-2.5 rounded-xl border border-slate-200/60 text-[11px] text-slate-600 leading-relaxed">
+                      <span className="font-semibold text-slate-700 block mb-0.5">Catatan / Kebutuhan:</span>
+                      {lead.reference}
+                    </div>
+                  )}
+
+                  <div className="pt-1 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Terkirim ke WA
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tampilan Desktop/Tablet: Tabel Rapi Tradisional */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="pb-3 pr-3">Waktu</th>
+                    <th className="pb-3 px-3">Nama Pengirim</th>
+                    <th className="pb-3 px-3">Talenta Tujuan</th>
+                    <th className="pb-3 px-3">Layanan</th>
+                    <th className="pb-3 px-3">Catatan / Proyek</th>
+                    <th className="pb-3 px-3">Status</th>
+                    <th className="pb-3 pl-3 text-right">Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {waLeads.map((lead) => (
+                    <tr key={lead.id || `${lead.member_name}-${lead.talent_name}`} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3 pr-3 text-slate-400 whitespace-nowrap">
+                        {lead.created_at ? new Date(lead.created_at).toLocaleString('id-ID') : '-'}
+                      </td>
+                      <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">
+                        {lead.member_name}
+                      </td>
+                      <td className="py-3 px-3 font-semibold text-blue-600 whitespace-nowrap">
+                        {lead.talent_name}
+                      </td>
+                      <td className="py-3 px-3 text-slate-600 whitespace-nowrap">
+                        {lead.service}
+                      </td>
+                      <td className="py-3 px-3 text-slate-500 max-w-xs truncate">
+                        {lead.reference}
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Terkirim ke WA
+                        </span>
+                      </td>
+                      <td className="py-3 pl-3 text-right whitespace-nowrap">
+                        {lead.id && (
+                          <button
+                            onClick={() => setDeleteConfirmation({ type: 'lead', id: lead.id!, name: `Lead "${lead.talent_name}" dari ${lead.member_name}` })}
+                            className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                            title="Hapus Entri"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

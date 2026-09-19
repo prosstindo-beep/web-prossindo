@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Freelancer } from '../types';
 import { 
   ShieldCheck, 
@@ -151,9 +151,16 @@ export const ContactWaModal: React.FC<ContactWaModalProps> = ({
   defaultMemberName,
   onLogLead
 }) => {
-  const [memberName, setMemberName] = useState(defaultMemberName);
+  const [memberName, setMemberName] = useState(defaultMemberName || '');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Selalu perbarui dan isi otomatis nilai nama member ketika modal dibuka
+  useEffect(() => {
+    if (isOpen) {
+      setMemberName(defaultMemberName || '');
+    }
+  }, [isOpen, defaultMemberName]);
 
   if (!isOpen || !talent) return null;
 
@@ -164,8 +171,21 @@ export const ContactWaModal: React.FC<ContactWaModalProps> = ({
     const finalMember = memberName.trim() || defaultMemberName || 'Member';
     const finalNote = note.trim() || 'Katalog Talent PROSS INDO';
 
+    const message = `Halo Admin,\n\nSaya *${finalMember}* ingin Order Talent berikut:\n- Nama: ${talent.name || '-'}\n- Layanan: ${talent.service || '-'}\n- Lokasi: ${talent.location || '-'}\n- Catatan/Kebutuhan: ${note.trim()}\n\nTerima kasih!`;
+    const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(message)}`;
+    
+    // Perbaikan iOS Safari Popup Blocker:
+    // Safari memblokir window.open jika dipanggil setelah await asynchronous.
+    // Solusi andal: Buka jendela referensi secara langsung pada sinkronisasi klik pengguna
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    let waWindow: Window | null = null;
+    if (!isMobile) {
+      waWindow = window.open('about:blank', '_blank');
+    }
+
     setSubmitting(true);
     try {
+      // Pencatatan Lead ke database tetap berjalan
       await onLogLead({
         member_name: finalMember,
         talent_name: talent.name || 'Talent',
@@ -178,17 +198,19 @@ export const ContactWaModal: React.FC<ContactWaModalProps> = ({
       setSubmitting(false);
     }
 
-    const message = `Halo Admin,\n\nSaya *${finalMember}* ingin Order Talent berikut:\n- Nama: ${talent.name || '-'}\n- Layanan: ${talent.service || '-'}\n- Lokasi: ${talent.location || '-'}\n- Catatan/Kebutuhan: ${note.trim()}\n\nTerima kasih!`;
-    const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(message)}`;
-    
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    if (waWindow && !waWindow.closed) {
+      waWindow.location.href = waUrl;
+    } else {
+      // Untuk perangkat mobile (iOS / Android), gunakan navigasi langsung yang kompatibel penuh dengan aplikasi WhatsApp
+      window.location.href = waUrl;
+    }
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-safe bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
       <div 
-        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 border border-slate-100 relative"
+        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 border border-slate-100 relative mb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -394,49 +416,76 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
   onPrev,
   onNext
 }) => {
+  const touchStartX = React.useRef<number | null>(null);
+  const touchStartY = React.useRef<number | null>(null);
+
   if (!isOpen || images.length === 0) return null;
 
   const currentImg = images[currentIndex] || images[0];
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const diffX = e.changedTouches[0].clientX - touchStartX.current;
+    const diffY = e.changedTouches[0].clientY - touchStartY.current;
+
+    // Swipe horizontal untuk ganti foto di Lightbox
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX < 0) {
+        onNext();
+      } else {
+        onPrev();
+      }
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 pb-safe animate-fadeIn select-none"
       onClick={onClose}
     >
       <button
         onClick={onClose}
-        className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-colors z-50"
+        className="absolute top-6 right-6 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-colors z-50 active:scale-95"
         title="Tutup (Esc)"
       >
         <X className="w-5 h-5" />
       </button>
 
-      <div className="absolute top-6 left-6 text-white/70 font-semibold text-xs bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm">
+      <div className="absolute top-6 left-6 text-white/70 font-semibold text-xs bg-black/50 px-3.5 py-1.5 rounded-full backdrop-blur-sm">
         {currentIndex + 1} / {images.length}
       </div>
 
       <div 
-        className="relative max-w-5xl max-h-[85vh] w-full flex items-center justify-center p-2"
+        className="relative max-w-5xl max-h-[85vh] w-full flex items-center justify-center p-2 touch-pan-y"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         <img
           src={currentImg}
           alt={`Foto Talenta ${currentIndex + 1}`}
-          className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl transition-transform duration-300"
+          className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl transition-transform duration-300 pointer-events-none"
         />
 
         {images.length > 1 && (
           <>
             <button
               onClick={onPrev}
-              className="absolute left-2 sm:-left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-xl"
+              className="absolute left-2 sm:-left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-xl active:scale-90"
               title="Foto Sebelumnya"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
               onClick={onNext}
-              className="absolute right-2 sm:-right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-xl"
+              className="absolute right-2 sm:-right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-xl active:scale-90"
               title="Foto Selanjutnya"
             >
               <ChevronRight className="w-6 h-6" />

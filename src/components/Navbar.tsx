@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={onLogout}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl text-slate-600 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95"
+            className="min-h-[44px] min-w-[44px] px-2.5 sm:px-3.5 py-2.5 rounded-xl text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200/60 sm:border-transparent hover:border-red-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95"
             title="Keluar / Logout"
           >
             <LogOut className="w-4 h-4" />

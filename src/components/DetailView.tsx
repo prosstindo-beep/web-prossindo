@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Freelancer } from '../types';
 import { 
   ChevronLeft, 
@@ -27,12 +27,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
 }) => {
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
-  // Ref untuk touch swipe gesture
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const touchDeltaX = useRef<number>(0);
-  const touchDeltaY = useRef<number>(0);
-
+  // Parsing daftar gambar
   let imgList: string[] = [];
   if (Array.isArray(talent.images)) {
     imgList = talent.images;
@@ -48,8 +43,22 @@ export const DetailView: React.FC<DetailViewProps> = ({
     imgList = ['https://placehold.co/800x600/e2e8f0/64748b?text=Foto+Talenta'];
   }
 
-  const currentImg = imgList[currentImgIndex] || imgList[0];
-  const isAvailable = talent.status === 'Available';
+  // Preload semua gambar talenta di background browser agar tidak ada jeda loading/layar kosong saat digeser
+  useEffect(() => {
+    if (imgList.length > 1) {
+      imgList.forEach((src) => {
+        const img = new Image();
+        img.src = src;
+      });
+    }
+  }, [imgList]);
+
+  // Touch Swipe Gesture State dengan Hardware Accelerated CSS Transform
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isHorizontalSwipe = useRef<boolean | null>(null);
 
   const handlePrev = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -61,49 +70,68 @@ export const DetailView: React.FC<DetailViewProps> = ({
     setCurrentImgIndex((prev) => (prev < imgList.length - 1 ? prev + 1 : 0));
   };
 
-  // Handler Touch Swipe Gesture untuk pengguna perangkat seluler
+  // Handler Touch Swipe Gesture Native
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (imgList.length <= 1) return;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
-    touchDeltaX.current = 0;
-    touchDeltaY.current = 0;
+    isHorizontalSwipe.current = null;
+    setIsDragging(true);
+    setDragOffset(0);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (touchStartX.current === null || touchStartY.current === null) return;
-    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
-    touchDeltaY.current = e.touches[0].clientY - touchStartY.current;
-  };
+    const diffX = e.touches[0].clientX - touchStartX.current;
+    const diffY = e.touches[0].clientY - touchStartY.current;
 
-  const handleTouchEnd = () => {
-    if (touchStartX.current === null) return;
-    const distanceX = touchDeltaX.current;
-    const distanceY = touchDeltaY.current;
-    const minSwipeDistance = 40;
-
-    // Jika pergeseran horizontal lebih kuat daripada vertikal
-    if (Math.abs(distanceX) > minSwipeDistance && Math.abs(distanceX) > Math.abs(distanceY)) {
-      if (imgList.length > 1) {
-        if (distanceX < 0) {
-          // Geser ke kiri -> foto berikutnya
-          handleNext();
-        } else {
-          // Geser ke kanan -> foto sebelumnya
-          handlePrev();
-        }
+    // Tentukan arah gestur sekali di awal gerakan: apakah geser horizontal atau gulir vertikal
+    if (isHorizontalSwipe.current === null) {
+      if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
+        isHorizontalSwipe.current = Math.abs(diffX) >= Math.abs(diffY);
       }
     }
 
-    touchStartX.current = null;
-    touchStartY.current = null;
-    touchDeltaX.current = 0;
-    touchDeltaY.current = 0;
+    // Jika pengguna sedang menggeser foto secara horizontal, gerakkan slider mengikuti jari secara real-time
+    if (isHorizontalSwipe.current === true) {
+      // Terapkan sedikit resistensi saat di ujung foto pertama atau terakhir
+      let currentOffset = diffX;
+      if (
+        (currentImgIndex === 0 && diffX > 0) || 
+        (currentImgIndex === imgList.length - 1 && diffX < 0)
+      ) {
+        currentOffset = diffX * 0.35;
+      }
+      setDragOffset(currentOffset);
+    }
   };
 
-  const handleImageClick = () => {
-    if (Math.abs(touchDeltaX.current) > 10) return;
-    onOpenLightbox(imgList, currentImgIndex);
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    if (isHorizontalSwipe.current === true) {
+      const threshold = 50; // Ambang batas jarak geser jari dalam piksel
+      if (dragOffset < -threshold && currentImgIndex < imgList.length - 1) {
+        setCurrentImgIndex((prev) => prev + 1);
+      } else if (dragOffset > threshold && currentImgIndex > 0) {
+        setCurrentImgIndex((prev) => prev - 1);
+      }
+    }
+
+    setDragOffset(0);
+    touchStartX.current = null;
+    touchStartY.current = null;
+    isHorizontalSwipe.current = null;
   };
+
+  const handleImageClick = (idx: number) => {
+    // Cegah klik lightbox jika jari sebenarnya sedang menggeser foto
+    if (Math.abs(dragOffset) > 10) return;
+    onOpenLightbox(imgList, idx);
+  };
+
+  const isAvailable = talent.status === 'Available';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 animate-fadeIn">
@@ -120,22 +148,41 @@ export const DetailView: React.FC<DetailViewProps> = ({
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden">
-        {/* Gallery / Carousel Section (1:1 aspect-square, object-cover tanpa bilah hitam samping) */}
+        {/* Gallery / Carousel Section dengan Hardware Acceleration & Real-time Smooth Slide */}
         <div 
-          className="relative w-full aspect-square bg-slate-100 overflow-hidden group select-none touch-pan-y"
+          className="relative w-full aspect-square bg-slate-100 overflow-hidden select-none touch-pan-y"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
-          <img
-            src={currentImg}
-            alt={talent.name}
-            onClick={handleImageClick}
-            className="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-105"
-          />
+          {/* Reel Container yang bergeser mengikuti jari (CSS GPU Transform) */}
+          <div 
+            className="flex w-full h-full will-change-transform"
+            style={{
+              transform: `translateX(calc(-${currentImgIndex * 100}% + ${dragOffset}px))`,
+              transition: isDragging ? 'none' : 'transform 300ms cubic-bezier(0.25, 1, 0.5, 1)'
+            }}
+          >
+            {imgList.map((src, idx) => (
+              <div 
+                key={idx} 
+                className="w-full h-full shrink-0 relative bg-slate-100 cursor-zoom-in"
+                onClick={() => handleImageClick(idx)}
+              >
+                <img
+                  src={src}
+                  alt={`${talent.name} - Foto ${idx + 1}`}
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  className="w-full h-full object-cover pointer-events-none"
+                />
+              </div>
+            ))}
+          </div>
 
           {/* Status Badge */}
-          <div className="absolute top-4 left-4 z-10">
+          <div className="absolute top-4 left-4 z-10 pointer-events-none">
             <span
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md ${
                 isAvailable ? 'bg-emerald-600/90' : 'bg-red-600/90'
@@ -175,9 +222,22 @@ export const DetailView: React.FC<DetailViewProps> = ({
                 <ChevronRight className="w-5 h-5" />
               </button>
 
-              {/* Counter Badge */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/70 text-white text-xs font-bold backdrop-blur-sm z-10">
-                {currentImgIndex + 1} / {imgList.length}
+              {/* Counter Badge & Dots Indicator */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 z-10 pointer-events-none">
+                <div className="px-3 py-1 rounded-full bg-black/70 text-white text-xs font-bold backdrop-blur-sm">
+                  {currentImgIndex + 1} / {imgList.length}
+                </div>
+                {/* Dots indicator mini */}
+                <div className="flex items-center gap-1">
+                  {imgList.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        i === currentImgIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
             </>
           )}
